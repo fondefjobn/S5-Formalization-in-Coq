@@ -1,8 +1,6 @@
-Module Propositional.
+From Coq Require Export Bool.
 
-Inductive bool : Type :=
-  | true
-  | false.
+Module Propositional.
 
 Definition neg (b:bool) : bool :=
   match b with
@@ -26,16 +24,7 @@ Definition implies (b1:bool) (b2:bool) : bool :=
   or (neg b1) b2.
 
 Definition ifonlyif (b1:bool) (b2:bool) : bool :=
-  or (and b1 b2) (and (neg b1) (neg b1)).
-
-Declare Scope bool_scope.
-Delimit Scope bool_scope with B.
-
-Notation "~ x" := (neg x).
-Notation "x && y" := (and x y).
-Notation "x || y" := (or x y).
-Notation "x → y" := (implies x y) (at level 50, left associativity) : bool_scope.
-Notation "x ↔ y" := (ifonlyif x y) (at level 50, left associativity).
+  and (implies b1 b2) (implies b2 b1).
 
 Definition var := nat.
 
@@ -59,49 +48,57 @@ Fixpoint interpret (f:Form) (i : var -> bool) : bool :=
   | Bi f1 f2 => ifonlyif (interpret f1 i) (interpret f2 i)
   end.
 
-Fixpoint interpretP (f:Form) (i : var -> bool) : Prop :=
-  match f with
-  | Const true => True
-  | Const false => False
-  | Var x => if i x then True else False
-  | Neg f1 => interpretP f1 i -> False
-  | Conj f1 f2 => if and (interpret f1 i) (interpret f2 i) then True else False
-  | Disj f1 f2 => if or (interpret f1 i) (interpret f2 i) then True else False
-  | Impl f1 f2 => if implies (interpret f1 i) (interpret f2 i) then True else False
-  | Bi f1 f2 => if ifonlyif (interpret f1 i) (interpret f2 i) then True else False
-  end.
+Definition interpretP (f:Form) (i : var -> bool) : Prop := Is_true (interpret f i).
 
 (** You can match two expressions at once by putting a comma between them. *)
 (*  | a_3 : forall (x:Form) (y:Form) (z:Form), f (Impl x (Impl y z)) -> f (Impl (Impl x y) (Impl x z)) *)
 
-Inductive f : Form -> Prop :=
-  | a_1 : forall x : Form, f (Impl x x)
-  | a_2 : forall x y : Form, f (Impl x (Impl y x))
-  | a_3 : forall x y z : Form, f (Impl (Impl x (Impl y z)) (Impl (Impl x y) (Impl x z)))
-  | a_4 : forall x y : Form, f (Impl (Impl (Neg x) (Neg y)) (Impl y x)).
+Inductive ax_pl : Form -> Prop :=
+  | a_1 : forall x : Form, ax_pl (Impl x x)
+  | a_2 : forall x y : Form, ax_pl (Impl x (Impl y x))
+  | a_3 : forall x y z : Form, ax_pl (Impl (Impl x (Impl y z)) (Impl (Impl x y) (Impl x z)))
+  | a_4 : forall x y : Form, ax_pl (Impl (Impl (Neg x) (Neg y)) (Impl y x)).
 
-Check f.
-Check f_ind.
-Check f_sind.
+Check ax_pl.
+Check ax_pl_ind.
+Check ax_pl_sind.
 
-Lemma f_correct (x : Form) :
-  f x -> forall i, interpretP x i = True.
+Lemma ax_pl_correct (x : Form) :
+  ax_pl x -> forall i, interpretP x i.
 Proof.
-  intros Hf. induction Hf.
-  - intros i. simpl.
-    destruct (interpret x i). simpl. reflexivity. simpl. reflexivity. reflexivity.
-  - intros i. simpl.
-    destruct (interpret x i). destruct (interpret y i). simpl. reflexivity. simpl. reflexivity.
-    destruct (interpret y i). simpl. reflexivity. simpl. reflexivity.
-  - intros i. simpl.
-    destruct (interpret x i). destruct (interpret y i). destruct (interpret z i). simpl. reflexivity. simpl. reflexivity.
-    destruct (interpret z i). simpl. reflexivity. simpl. reflexivity.  
-    destruct (interpret y i). destruct (interpret z i). simpl. reflexivity. simpl. reflexivity. 
-    destruct (interpret z i). simpl. reflexivity. simpl. reflexivity.
-  - intros i. simpl.
-    destruct (interpret x i). destruct (interpret y i). simpl. reflexivity. simpl. reflexivity.
-    destruct (interpret y i). simpl. reflexivity. simpl. reflexivity.
+  intros H. induction H.
+  - intros i. unfold interpretP. unfold Is_true. simpl. unfold implies. unfold or. unfold neg. destruct (interpret x i).
+    + reflexivity.
+    + reflexivity.
+  - intros i. unfold interpretP. unfold Is_true. simpl. unfold implies. unfold or. unfold neg. destruct (interpret x i).
+    + destruct (interpret y i).
+      * reflexivity.
+      * reflexivity.
+    + reflexivity.
+  - intros i. unfold interpretP. unfold Is_true. simpl. unfold implies. unfold or. unfold neg. destruct (interpret x i).
+    + destruct (interpret y i).
+      * destruct (interpret z i).
+        -- reflexivity.
+        -- reflexivity.
+      * reflexivity.
+    + reflexivity.
+  - intros i. unfold interpretP. unfold Is_true. simpl. unfold implies. unfold or. unfold neg. destruct (interpret x i).
+    + destruct (interpret y i).
+      * reflexivity.
+      * reflexivity.
+    + destruct (interpret y i).
+      * reflexivity.
+      * reflexivity.
 Qed.
+
+Declare Scope bool_scope.
+Delimit Scope bool_scope with B.
+
+Notation "~ x" := (neg x).
+Notation "x && y" := (and x y).
+Notation "x || y" := (or x y).
+Notation "x → y" := (implies x y) (at level 50, left associativity) : bool_scope.
+Notation "x ↔ y" := (ifonlyif x y) (at level 50, left associativity).
 
 Example test_or1:  (or true  false) = true.
 Proof. simpl. reflexivity.  Qed.
