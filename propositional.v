@@ -50,45 +50,47 @@ Fixpoint interpret (f:Form) (i : var -> bool) : bool :=
 
 Definition interpretP (f:Form) (i : var -> bool) : Prop := Is_true (interpret f i).
 
-(** You can match two expressions at once by putting a comma between them. *)
-(*  | a_3 : forall (x:Form) (y:Form) (z:Form), f (Impl x (Impl y z)) -> f (Impl (Impl x y) (Impl x z)) *)
-
 Inductive ax_pl : Form -> Prop :=
   | a_1 : forall x : Form, ax_pl (Impl x x)
   | a_2 : forall x y : Form, ax_pl (Impl x (Impl y x))
   | a_3 : forall x y z : Form, ax_pl (Impl (Impl x (Impl y z)) (Impl (Impl x y) (Impl x z)))
-  | a_4 : forall x y : Form, ax_pl (Impl (Impl (Neg x) (Neg y)) (Impl y x)).
+  | a_4 : forall x y : Form, ax_pl (Impl (Impl (Neg x) (Neg y)) (Impl y x))
+  | a_5 (x y z : Form) : ax_pl (Impl (Conj (Impl x y) x) y).
+
+(*
+
+Inductive ax_pl : Form -> Prop :=
+  | a_1 (x : Form) : ax_pl (Impl x x)
+  | a_2 (x y : Form) : ax_pl (Impl x (Impl y x))
+  | a_3 (x y z : Form) : ax_pl (Impl (Impl x (Impl y z)) (Impl (Impl x y) (Impl x z)))
+  | a_4 (x y : Form) : ax_pl (Impl (Impl (Neg x) (Neg y)) (Impl y x))
+  | a_5 (x y z : Form) : ax_pl (Impl (Conj (Impl x y) x) y).
+
+*)
 
 Check ax_pl.
 Check ax_pl_ind.
 Check ax_pl_sind.
 
-Lemma ax_pl_correct (x : Form) :
+Lemma ax_pl_sound (x : Form) :
   ax_pl x -> forall i, interpretP x i.
 Proof.
   intros H. induction H.
-  - intros i. unfold interpretP. unfold Is_true. simpl. unfold implies. unfold or. unfold neg. destruct (interpret x i).
+  - intros i. unfold interpretP, Is_true. simpl. unfold implies, or, neg. destruct (interpret x i); reflexivity.
+  - intros i. unfold interpretP, Is_true. simpl. unfold implies, or, neg. destruct (interpret x i).
+    + destruct (interpret y i); reflexivity.
     + reflexivity.
-    + reflexivity.
-  - intros i. unfold interpretP. unfold Is_true. simpl. unfold implies. unfold or. unfold neg. destruct (interpret x i).
+  - intros i. unfold interpretP, Is_true. simpl. unfold implies, or, neg. destruct (interpret x i).
     + destruct (interpret y i).
-      * reflexivity.
-      * reflexivity.
-    + reflexivity.
-  - intros i. unfold interpretP. unfold Is_true. simpl. unfold implies. unfold or. unfold neg. destruct (interpret x i).
-    + destruct (interpret y i).
-      * destruct (interpret z i).
-        -- reflexivity.
-        -- reflexivity.
+      * destruct (interpret z i); reflexivity.
       * reflexivity.
     + reflexivity.
-  - intros i. unfold interpretP. unfold Is_true. simpl. unfold implies. unfold or. unfold neg. destruct (interpret x i).
-    + destruct (interpret y i).
-      * reflexivity.
-      * reflexivity.
-    + destruct (interpret y i).
-      * reflexivity.
-      * reflexivity.
+  - intros i. unfold interpretP, Is_true. simpl. unfold implies, or, neg. destruct (interpret x i).
+    + destruct (interpret y i); reflexivity.
+    + destruct (interpret y i); reflexivity.
+  - intros i. unfold interpretP, Is_true. simpl. unfold implies, and, or, neg. destruct (interpret x i).
+    + destruct (interpret y i); reflexivity.
+    + reflexivity.
 Qed.
 
 Declare Scope bool_scope.
