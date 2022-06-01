@@ -95,7 +95,7 @@ Proof.
   - intros i. unfold interpretP, Is_true. simpl. unfold implies. destruct (interpret x i).
     + destruct (interpret y i); reflexivity.
     + destruct (interpret y i); reflexivity.
-  - intros i. unfold interpretP, Is_true. pose proof (IHax_pl1 i). pose proof (IHax_pl2 i). 
+  - intros i. unfold interpretP, Is_true. specialize (IHax_pl1 i) as H1. specialize (IHax_pl2 i) as H2. 
     unfold interpretP, Is_true in H1, H2. simpl in H1. unfold implies in H1. destruct (interpret y i).
     + reflexivity.
     + destruct (interpret x i).
