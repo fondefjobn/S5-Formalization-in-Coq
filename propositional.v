@@ -20,7 +20,7 @@ Definition ifonlyif (b1:bool) (b2:bool) : bool :=
 Definition var := nat.
 
 Inductive Form : Type :=
-  | Const (b:bool)
+  | F
   | Var (n:nat)
   | Impl (f1:Form) (f2:Form).
 (*
@@ -30,7 +30,7 @@ Inductive Form : Type :=
   | Bi (f1:Form) (f2:Form).
 *)
 
-Definition Neg (f : Form) := Impl f (Const false).
+Definition Neg (f : Form) := Impl f F.
 
 Definition Disj (f1 f2 : Form) := Impl (Neg f1) f2.
 
@@ -38,7 +38,7 @@ Definition Conj (f1 f2 : Form) := Neg (Disj (Neg f1) (Neg f2)).
 
 Fixpoint interpret (f:Form) (i : var -> bool) : bool :=
   match f with
-  | Const c => c
+  | F => false
   | Var x => i x
   | Impl f1 f2 => implies (interpret f1 i) (interpret f2 i)
   end.
