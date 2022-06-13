@@ -22,103 +22,23 @@ Definition Conj (f1 f2 : Form) := Neg (Disj (Neg f1) (Neg f2)).
 
 Definition Diamond (f : Form) := Neg (Box (Neg f)).
 
-Search Ensemble.
-
-Section Kripke_Frame.
-
-Variable X : Type.
-
-Structure model := {
-  world : Ensemble X;
-  rel : relation X;
-  val: X -> Ensemble X;
-  eq : equiv X rel
-}.
-
-Record model1 : Type := Model {
-  state :> Type;
-  trans : state -> state -> Prop;
-  label : state -> var -> Prop;
-  eq1 : forall x y z : state, trans x x /\ ((trans x y /\ trans y z) -> trans x z) /\ trans x y -> trans y x;
+Record model : Type := Model {
+  world :> Type;
+  rel : world -> world -> Prop;
+  val : world -> var -> Prop;
+  eq : equiv world rel
   (* dec : forall x : Type, x -> True \/ x -> False *)
 }.
 
-(*  @Verification of Dynamic Bisimulation Theorems in Coq
-    @ Fervari, Trucco, Ziliani
+Arguments val {_} w x.
+Arguments rel {_} x y.
 
-From Mtac2 Require Export Mtac2.
-From Coq.Sets Require Export Constructive_sets.
-From Coq.Relations Require Export Relations.
-From Coq.Logic Require Export Classical.
-From Coq.Lists Require Export List.
-From RCLIC Require Export utilities.
-From mathcomp Require Export ssreflect ssrnat ssrbool eqtype.
-
-Definition valuation (W: Set) : Type := set (prop * W).
-
-Structure model := {
-  m_states :> Set;
-  m_rel : relation m_states;
-  m_val: valuation m_states
-}.
-
-*)
-
-(* @Doczkal & Smolka, 2011 (for K)*)
-Record model2 := Model2 {
-  state2 :> Type;
-  trans2 : state2 -> state2 -> Prop;
-  label2 : var -> (state2 -> Prop);
-  BOX : (state2 -> Prop) -> (state2 -> Prop);
-  boxE : forall p w, BOX p w <-> forall v, trans2 w v -> p v;
-  DIA : (state2 -> Prop) -> (state2 -> Prop);
-  diaE : forall p w, DIA p w <-> exists v, trans2 w v /\ p v;
-}.
-
-
-End Kripke_Frame.
-
-Type world.
-
-(*
-f : X -> bool
-x : X
-g y = if x = y then true else f y
-*)
-
-
-Definition implies (b1:bool) (b2:bool) : bool :=
-  match b1 with
-  | true => b2
-  | false => true
-  end.
-
-Definition neg (b:bool) : bool := implies b false.
-
-Definition and (b1:bool) (b2:bool) : bool := neg (implies b1 (neg b2)).
-
-Definition or (b1:bool) (b2:bool) : bool := implies (neg b1) b2.
-
-Definition ifonlyif (b1:bool) (b2:bool) : bool :=
-  and (implies b1 b2) (implies b2 b1).
-
-Search relation.
-
-Fixpoint interpret (f : Form) (m : model1) (w : state m) (i : model1 -> state m -> var -> bool) : bool :=
+Fixpoint interpret (f : Form) (m : model) (w : m) : Prop :=
   match f with
-  | F_ => false
-  | Var x => i m w x
-  | Impl f1 f2 => implies (interpret f1 m w i) (interpret f2 m w i)
-  | Box f => true
-(*  | Box f => forall x y : state m, trans m x y -> interpretP f m w i *)
-  end.
-
-Fixpoint interpretP (f : Form) (m : model1) (w : state m) (i : model1 -> state m -> var -> bool) : Prop :=
-  match f with
-  | F_ => Is_true (interpret f m w i)
-  | Var x => Is_true (interpret f m w i)
-  | Impl f1 f2 => Is_true (interpret f m w i)
-  | Box f => forall x y : state m, trans m x y -> interpretP f m w i 
+  | F_ => False
+  | Var x => val w x
+  | Impl f1 f2 => interpret f1 m w -> interpret f2 m w
+  | Box f => forall (y : m), rel w y -> interpret f m y
   end.
 
 Inductive ax_s5 : Form -> Prop :=
@@ -132,12 +52,75 @@ Inductive ax_s5 : Form -> Prop :=
   | mp (x y z : Form) : ax_s5 (Impl x y) -> ax_s5 x -> ax_s5 y
   | nec (x : Form) : ax_s5 x -> ax_s5 (Box x).
 
-Lemma ax_s5_sound (x : Form) :
-  ax_s5 x -> forall m w i, interpretP x m w i.
+Lemma excluded_middle_double_negation (f : Form) (m : model) (w : m) :
+  ~~(interpret f m w \/ not (interpret f m w)).
 Proof.
-  intros H. induction H.
+  unfold not. intros H. apply H. right. intros X. destruct H. left. apply X.
+Qed.
+
+Lemma excluded_middle (f : Form) (m : model) (w : m) :
+  (interpret f m w \/ not (interpret f m w)).
+Proof.
 Admitted.
-(* Qed. *)
+
+Lemma reflex (m : model) : 
+  forall x : m, rel x x.
+Proof.
+  apply m.
+Qed.
+
+Lemma trans (m : model) : 
+  forall x y z : m, rel x y -> rel y z -> rel x z.
+Proof.
+  apply m.
+Qed.
+
+Lemma sym (m : model) : 
+  forall x y : m, rel x y -> rel y x.
+Proof.
+  apply m.
+Qed.
+
+Theorem ax_s5_soundness (f : Form) :
+  ax_s5 f -> forall m w, interpret f m w.
+Proof.
+  intros H M. induction H.
+  - intros W X Y. apply X.
+  - intros W Z Y X. simpl in Z, Y. apply Z.
+    + apply X.
+    + apply Y, X.
+  - simpl. intros W A B. assert (H: interpret x M W \/ (interpret x M W -> False)).
+    + apply excluded_middle.
+    + destruct H.
+      * apply H.
+      * apply A in B. 
+        -- destruct B.
+        -- apply H.  
+  - intros W A B X R. simpl in A, B. specialize (A X). specialize (B X). apply A.
+    + apply R.
+    + apply B, R.
+  - intros W A. simpl in A. specialize (A W). apply A. apply reflex.
+  - intros W A X1 R1 X2 R2. apply A. assert (H: rel W X1 -> rel X1 X2 -> rel W X2).
+    + apply trans.
+    + apply H.
+      * apply R1.
+      * apply R2.
+  - intros W A X R B. simpl. simpl in B. specialize (B W). apply B.
+    + apply sym, R.
+    + apply A.
+  - intros W. simpl in IHax_s5_1. apply IHax_s5_1. apply IHax_s5_2.
+  - intros W X R. specialize (IHax_s5 X) as Y. apply Y.
+Qed.
+
+
+
+(*
+f : X -> bool
+x : X
+g y = if x = y then true else f y
+*)
+
+Definition bigUnion (X : nat -> (Form -> Prop)) (x : Form) : Prop := exists i, X i x.
 
 End Modal.
 
