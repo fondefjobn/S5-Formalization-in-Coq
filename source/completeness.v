@@ -5,30 +5,6 @@ From S5 Require Export set.
 From S5 Require Export soundness.
 From S5 Require Export encode.
 
-Definition consistent (G : Form -> Prop) : Prop :=
-  ~ (ax_s5 G F_).
-
-Lemma consistent_subset (F G : Form -> Prop) :
-  subset F G /\ consistent G -> consistent F.
-Proof.
-  intros [Hs Hcon] Hf. unfold consistent, not in Hcon. apply Hcon. 
-  assert (D: ax_s5 F F_ /\ subset F G -> ax_s5 G F_). 
-  - apply deduce_subset.
-  - apply D. split; assumption. 
-Qed.
-
-Lemma deduction_theorem G p q :
-  ax_s5 G (Impl p q) <-> ax_s5 (add_singleton G p) q.
-Proof.
-  split.
-  - intros H1. eapply mp.
-    + eapply deduce_subset. split. 
-      * apply H1. 
-      * unfold subset. intros r H2. unfold add_singleton. right. assumption.
-    + apply a_0. unfold add_singleton. left. reflexivity.
-  - intros H1. 
-Admitted.
-
 Definition is_consistent_choose (G : Form -> Prop) : bool. (*:=
   let H := consistent G \/ ~consistent G in
   match H with 
