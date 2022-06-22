@@ -1,4 +1,7 @@
 
+From S5 Require Export model.
+From S5 Require Export form.
+
 Definition rel1 : nat -> nat -> Prop := fun n1 n2 => Nat.modulo n1 2 = Nat.modulo n2 2.
 
 Lemma rel1_eq : equiv _ rel1.
@@ -30,3 +33,4 @@ Proof.
   apply H1.
   Transparent Nat.modulo.
 Qed.
+
