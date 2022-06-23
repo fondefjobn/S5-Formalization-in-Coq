@@ -32,15 +32,15 @@ Proof.
     + destruct H.
       * assumption.
       * apply XFYF in Y.
-        -- destruct Y.
+        -- contradiction.
         -- assumption.
   - intros XY X W2 R. simpl in XY, X. specialize (XY W2). specialize (X W2). apply XY.
     + assumption.
     + apply X, R.
   - intros X. simpl in X. specialize (X W1). apply X, reflex.
-  - intros X W2 R1 W3 R2. apply X. assert (H: rel W1 W2 -> rel W2 W3 -> rel W1 W3).
-    + apply trans.
-    + apply H; assumption.
+  - intros X W2 R1 W3 R2. apply X. eapply trans.
+    + apply R1.
+    + apply R2.
   - intros X W2 R NX. simpl. simpl in NX. specialize (NX W1). apply NX.
     + apply sym, R.
     + assumption.
@@ -48,7 +48,7 @@ Proof.
     + apply HW.
     + apply IHax_s5_2. apply HW.
   - intros W2 R. specialize (IHax_s5 W2). apply IHax_s5.
-    intros y EG. unfold empty_set in EG. destruct EG.
+    intros y EG. unfold empty_set in EG. contradiction.
 Qed.
 
 Lemma deduce_subset (F G : Form -> Prop) (x : Form) :
@@ -70,25 +70,71 @@ Proof.
   - apply nec. assumption.
 Qed.
 
-Lemma deduction_theorem G p q :
-  ax_s5 G (Impl p q) <-> ax_s5 (add_singleton G p) q.
+Lemma deduce_impl G p q :
+ax_s5 G q -> ax_s5 G (Impl p q).
+Proof.
+  intros H. eapply mp.
+  - apply a_1.
+  - assumption.
+Qed.
+
+Lemma deduce_self_impl (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Impl x x).
+Proof.
+  eapply mp.
+  - eapply mp.
+    + apply a_2.
+    + apply a_1.
+  - assert (H: ax_s5 G (Impl x (Impl x x))).
+    + apply a_1.
+    + apply H. 
+Qed.
+
+Lemma deduction_theorem_1 (G : Form -> Prop) (x y : Form) :
+  ax_s5 G (Impl x y) -> ax_s5 (add_singleton G x) y.
+Proof.
+  intros H0. eapply mp.
+  - eapply deduce_subset. split.
+    + apply H0.
+    + apply subset_add_singleton.
+  - apply a_0. apply member_add_singleton.
+Qed.
+
+Lemma deduction_theorem_2 (G : Form -> Prop) (x y : Form) :
+  ax_s5 (add_singleton G x) y -> ax_s5 G (Impl x y).
+Proof.
+  intros H0. remember (add_singleton G x) as G'. induction H0; subst.
+  - destruct H as [H1|H2].
+    + rewrite H1. apply deduce_self_impl.
+    + apply deduce_impl, a_0, H2.
+  - apply deduce_impl, a_1.
+  - apply deduce_impl, a_2.
+  - apply deduce_impl, a_3.
+  - apply deduce_impl, a_k.
+  - apply deduce_impl, a_t.
+  - apply deduce_impl, a_4.
+  - apply deduce_impl, a_b.
+  - eapply mp.
+    + eapply mp.
+      * apply a_2.
+      * apply IHax_s5_1. reflexivity.
+    + eapply IHax_s5_2. reflexivity.
+  - apply deduce_impl, nec, H0.
+Qed.
+
+Lemma deduction_theorem (G : Form -> Prop) (x y : Form) :
+  ax_s5 G (Impl x y) <-> ax_s5 (add_singleton G x) y.
 Proof.
   split.
-  - intros H0. eapply mp.
-    + eapply deduce_subset. split.
-      * apply H0. 
-      * apply subset_add_singleton.
-    + apply a_0. apply member_add_singleton.
-  - intros H0. induction H0.
-    + eapply mp. apply a_3. eapply mp. eapply a_1. eapply a_0.
-Admitted.
+    - apply deduction_theorem_1.
+    - apply deduction_theorem_2.
+Qed.
 
 Lemma deduce_empty (G : Form -> Prop) (x : Form) :
   ax_s5 empty_set x -> ax_s5 G x.
 Proof.
-  intros H0. assert (H1: ax_s5 empty_set x /\ subset empty_set G -> ax_s5 G x).
-  apply deduce_subset. apply H1. split.
-  - assumption.
+  intros H. eapply deduce_subset. split.
+  - apply H.
   - apply empty_subset.
 Qed.
 
@@ -103,8 +149,8 @@ Lemma deduce_singleton (G : Form -> Prop) (x y : Form) :
 Proof.
   intros [H0 H1]. eapply mp.
   - apply deduction_theorem. eapply deduce_subset. split.
-      * apply H1.
-      * apply subset_singleton.
+    + apply H1.
+    + apply subset_singleton.
   - assumption.
 Qed.
 
@@ -123,42 +169,31 @@ Lemma consistent_subset (F G : Form -> Prop) :
   subset F G /\ consistent G -> consistent F.
 Proof.
   intros [Hs Hcon] Hf. unfold consistent, not in Hcon. apply Hcon.
-  assert (D: ax_s5 F F_ /\ subset F G -> ax_s5 G F_).
-  - apply deduce_subset.
-  - apply D. split; assumption. 
+  eapply deduce_subset. split.
+  - apply Hf.
+  - assumption. 
 Qed.
 
 Lemma deduce_not_consistent_add_neg_singleton (G : Form -> Prop) (x : Form) :
   consistent G /\ ax_s5 G x -> ~consistent (add_singleton G (Neg x)).
 Proof.
-  intros [H0 H1] H2. unfold consistent, not in H2.
-  assert (H3: ax_s5 (add_singleton G (Neg x)) x).
-  - eapply deduce_subset. split.
-    + apply H1.
-    + apply subset_add_singleton.
-  - assert (H4: ax_s5 (add_singleton G (Neg x)) (Neg x)).
+  intros [H0 H1] H2. eapply consistent_xor.
+  - apply H2.
+  - split.
+    + eapply deduce_subset. split.
+      * apply H1.
+      * apply subset_add_singleton. 
     + apply deduce_member. apply member_add_singleton.
-    + assert (H5: ~(ax_s5 (add_singleton G (Neg x)) x /\ ax_s5 (add_singleton G (Neg x)) (Neg x))).
-      * apply consistent_xor. intros H5. apply H2, H5.
-      * assert (H6: (ax_s5 (add_singleton G (Neg x)) x /\ ax_s5 (add_singleton G (Neg x)) (Neg x))).
-        -- split; assumption.
-        -- apply H5, H6.
 Qed.
 
 Lemma consistent_add_singleton_not_deduce (G : Form -> Prop) (x : Form) :
   consistent (add_singleton G x) -> ~ax_s5 G (Neg x).
 Proof.
-  intros H0 H1. assert (H2: consistent G).
-  - eapply consistent_subset. split.
-    + apply subset_add_singleton.
-    + apply H0.
-  - assert (H3: ax_s5 (add_singleton G x) x /\ ax_s5 (add_singleton G x) (Neg x)).
-    + split.
-      * apply a_0. apply member_add_singleton.
-      * eapply deduce_subset. split.
-        -- apply H1.
-        -- apply subset_add_singleton.
-    + eapply consistent_xor.
-      * apply H0.
-      * apply H3.
+  intros H0 H1. eapply consistent_xor.
+  - apply H0.
+  - split.
+    + apply a_0. apply member_add_singleton.
+    + eapply deduce_subset. split.
+      * apply H1.
+      * apply subset_add_singleton.
 Qed.
