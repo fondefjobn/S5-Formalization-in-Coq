@@ -77,9 +77,10 @@ Proof.
   - intros H0. eapply mp.
     + eapply deduce_subset. split.
       * apply H0. 
-      * unfold subset. intros r H1. unfold add_singleton. right. assumption.
+      * apply subset_add_singleton.
     + apply a_0. apply member_add_singleton.
-  - intros H0.
+  - intros H0. induction H0.
+    + eapply mp. apply a_3. eapply mp. eapply a_1. eapply a_0.
 Admitted.
 
 Lemma deduce_empty (G : Form -> Prop) (x : Form) :
@@ -113,8 +114,10 @@ Definition consistent (G : Form -> Prop) : Prop :=
 Lemma consistent_xor (G : Form -> Prop) (x : Form) :
   consistent G -> ~(ax_s5 G x /\ ax_s5 G (Neg x)).
 Proof.
-  intros H0 [H1 H2]. apply H0.
-Admitted.
+  intros H0 [H1 H2]. apply H0. unfold Neg in H2. eapply mp.
+  - apply H2.
+  - assumption.
+Qed.
 
 Lemma consistent_subset (F G : Form -> Prop) :
   subset F G /\ consistent G -> consistent F.
@@ -159,12 +162,3 @@ Proof.
       * apply H0.
       * apply H3.
 Qed.
-
-
-
-
-
-
-
-
-

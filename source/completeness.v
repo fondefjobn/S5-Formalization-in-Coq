@@ -5,6 +5,9 @@ From S5 Require Export set.
 From S5 Require Export soundness.
 From S5 Require Export encode.
 
+Definition max_consistent (G : Form -> Prop) : Prop :=
+  consistent G /\ forall x, G x \/ G (Neg x).
+
 Definition is_consistent_choose (G : Form -> Prop) : bool. (*:=
   let H := consistent G \/ ~consistent G in
   match H with 
@@ -67,9 +70,6 @@ Proof.
   - simpl. apply insert_correct, IHn, H.
 Qed.
 
-Definition max_consistent_set (G : Form -> Prop) : Prop :=
-  consistent G /\ forall x, G x \/ G (Neg x).
-
 Definition big_union (F : nat -> (Form -> Prop)) (x : Form) : Prop :=
   exists i, F i x.
 
@@ -96,6 +96,25 @@ Lemma max_consistent_set_correct G :
   consistent G -> max_consistent_set G.
 Proof.
 Admitted.
+
+Lemma max_con_member (G : Form -> Prop) (x : Form) :
+  max_consistent G -> (G x <-> ax_s5 G x).
+Proof.
+  intros H0. split; intros H1.
+  - apply a_0, H1.
+  - unfold max_consistent in H0. destruct H0 as [H2 H3]. specialize (H3 x). destruct H3.
+    + assumption.
+    + assert (H3: ax_s5 G (Neg x)).
+      * apply a_0 in H. assumption.
+      * assert (H4: ax_s5 G x /\ ax_s5 G (Neg x)).
+        -- split; assumption.
+        -- assert (H5: ~(ax_s5 G x /\ ax_s5 G (Neg x))).
+          ++ apply consistent_xor, H2.
+          ++ contradiction.
+Qed.
+
+Lemma max_con_subset (G : Form -> Prop) :
+  subset G (max_consistent G).
 
 
 
