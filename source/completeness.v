@@ -5,48 +5,52 @@ From S5 Require Export set.
 From S5 Require Export soundness.
 From S5 Require Export encode.
 
-Definition max_consistent (G : Form -> Prop) : Prop :=
-  consistent G /\ forall x, G x \/ G (Neg x).
+Definition insert (G : Form -> Prop) (n : nat) : (Form -> Prop) := 
+  fun g =>
+    let f := decode n in
+    G g \/ (consistent (add_singleton G f) /\ g = f) \/ 
+    (~ consistent (add_singleton G f) /\ g = Neg f).
 
-Definition is_consistent_choose (G : Form -> Prop) : bool. (*:=
-  let H := consistent G \/ ~consistent G in
-  match H with 
-  | or_introl H => true
-  | or_intror H => false
-  end. *)
-  Admitted.
-
-Lemma is_consistent_choose_correct G :
-  is_consistent_choose G = true <-> consistent G.
+Lemma inconsistent_consistent (G : Form -> Prop) (x : Form) : 
+  consistent G -> 
+  ~ consistent (add_singleton G x) -> consistent (add_singleton G (Neg x)).
 Proof.
-  split.
-  - intros H1 H2.
-Admitted.
+  intros HG H1 Hp. apply HG. assert (H2: ax_s5 (add_singleton G x) F_).
+  { destruct (excluded_middle (ax_s5 (add_singleton G x) F_)).
+  - assumption.
+  - contradiction. }
+  apply (mp _ x).
+  - apply deduction_theorem. apply H2. 
+  - apply deduction_theorem in Hp. apply (mp _ (Impl (Neg x) F_)).
+    + apply ax_s5_dne.
+    + apply Hp.
+Qed.
 
-Lemma is_consistent_choose_correct_F G :
-  is_consistent_choose G = false <-> ~consistent G.
-Proof.
-  split.
-  - intros H1 H2. apply H2.
-Admitted.
-
-Definition insert (G : Form -> Prop) (n : nat) : (Form -> Prop) :=
-  let f := decode n in
-  match is_consistent_choose (add_singleton G f) with
-  | true => add_singleton G f
-  | false => add_singleton G (Neg f)
-  end.
-
-Lemma insert_correct G n :
+Lemma insert_correct (G : Form -> Prop) (n : nat) : 
   consistent G -> consistent (insert G n).
+Proof.  
+  intros H. unfold insert. pose (f := decode n). fold f.
+  destruct (excluded_middle (consistent (add_singleton G f))) as [Hcon1|Hcon1].
+  - apply (consistent_subset _ (add_singleton G f)). split.
+    + unfold add_singleton. intros x [Hx | [H1 | H1]].
+      * right. assumption.
+      * left. apply H1.
+      * unfold add_singleton in Hcon1. destruct H1. contradiction.
+    + assumption. 
+  - apply (consistent_subset _ (add_singleton G (Neg f))). split.
+    + intros g [H1 | [H2 | H3]]; firstorder.
+    + apply inconsistent_consistent; assumption.
+Qed.
+
+Lemma consistent_add_xor (G : Form -> Prop) (x : Form) :
+  consistent G ->
+  (consistent (add_singleton G x)) \/ (consistent (add_singleton G (Neg x))).
 Proof.
   intros H0.
-  unfold insert. case_eq (is_consistent_choose (add_singleton G (decode n))); intros H1.
-  + apply is_consistent_choose_correct in H1. apply H1.
-  + apply is_consistent_choose_correct_F in H1. unfold consistent, add_singleton, not.
-    intros H2. apply H1. unfold consistent, add_singleton, not. intros H3. apply H0.
-    destruct H3.
-Admitted.
+  destruct (excluded_middle (consistent (add_singleton G x))) as [H1|H1].
+  { left. assumption. }
+  right. apply inconsistent_consistent; assumption.
+Qed.
 
 Fixpoint step (G : Form -> Prop) (n : nat) : (Form -> Prop) :=
   match n with
@@ -54,15 +58,13 @@ Fixpoint step (G : Form -> Prop) (n : nat) : (Form -> Prop) :=
   | S n => insert (step G n) n
   end.
 
-Lemma step_subset n : 
-  forall G, subset G (insert G n).
+Lemma insert_subset (G : Form -> Prop) (n : nat) : 
+  subset G (insert G n).
 Proof.
-  intros G. unfold insert.
-  case_eq (is_consistent_choose (add_singleton G (decode n))); intros H0;
-  unfold subset; intros x H1; unfold add_singleton; right; assumption.
+  intros g H. left. assumption.
 Qed.
 
-Lemma step_correct G n :
+Lemma step_correct (G : Form -> Prop) (n : nat) :
   consistent G -> consistent (step G n).
 Proof.
   induction n; intros H.
@@ -70,51 +72,72 @@ Proof.
   - simpl. apply insert_correct, IHn, H.
 Qed.
 
+Definition max_consistent (G : Form -> Prop) (x : Form) : Prop :=
+  consistent G /\ (G x \/ G (Neg x)).
+
 Definition big_union (F : nat -> (Form -> Prop)) (x : Form) : Prop :=
-  exists i, F i x.
+  exists i, (F i) x.
 
 Definition max_consistent_compl (X : Form -> Prop) : Form -> Prop :=
   big_union (step X).
 
-Lemma max_consistent_compl_maximal G f :
+Lemma max_consistent_compl_maximal (G : Form -> Prop) (f : Form) :
   consistent G -> max_consistent_compl G f \/ max_consistent_compl G (Neg f).
 Proof.
-  intros H0. unfold max_consistent_compl, big_union.
-  (* assume f does not belong to G *)
-  pose (n := encode f).
-  case_eq (is_consistent_choose (add_singleton (step G n) f)); intros H1.
-  - left. apply is_consistent_choose_correct in H1. exists n. induction n. unfold step.
+  intros H0. pose (n := encode f).
+  destruct (excluded_middle (G f)) as [H1|H1].
+  { left. exists 0. assumption. }
+  assert (H2: (consistent (add_singleton G f)) \/ (consistent (add_singleton G (Neg f)))).
+  { apply consistent_add_xor, H0. }
+  unfold max_consistent_compl, big_union.
+  destruct H2 as [H3|H3].
+  - left. exists n. unfold step. admit.
+  - right. exists n. admit.
 Admitted.
 
-Lemma max_consistent_compl_consistent G :
+Lemma max_consistent_compl_consistent (G : Form -> Prop) :
   consistent G -> consistent (max_consistent_compl G).
 Proof.
-  intros H0. unfold max_consistent_compl, big_union.
+  intros H0 H1. unfold max_consistent_compl, big_union in H1.
 Admitted.
 
-Lemma max_consistent_set_correct G :
-  consistent G -> max_consistent_set G.
+Lemma max_consistent_set_correct (G : Form -> Prop) (f : Form) :
+  consistent G -> max_consistent_compl G f -> max_consistent G f.
 Proof.
+  intros H0 H1. unfold max_consistent. split.
+  - assumption.
+  - unfold max_consistent_compl, big_union in H1.
+    destruct H1. assert (H2: x = encode f). { admit. }
+    induction x.
+    + left. apply H.
+    + apply IHx.
+      * destruct H.
+        -- assumption.
+        -- destruct H; destruct H.
+          ++ admit.
+          ++ admit.
+      * rewrite <- H2. exfalso.
+    
 Admitted.
 
-Lemma max_con_member (G : Form -> Prop) (x : Form) :
-  max_consistent G -> (G x <-> ax_s5 G x).
+Lemma max_con_member (G : Form -> Prop) (f : Form) :
+  max_consistent G f -> (G f <-> ax_s5 G f).
 Proof.
   intros H0. split; intros H1.
   - apply a_0, H1.
-  - unfold max_consistent in H0. destruct H0 as [H2 H3]. specialize (H3 x). destruct H3.
+  - unfold max_consistent in H0. destruct H0 as [H2 H3]. destruct H3.
     + assumption.
-    + assert (H3: ax_s5 G (Neg x)).
-      * apply a_0 in H. assumption.
-      * assert (H4: ax_s5 G x /\ ax_s5 G (Neg x)).
-        -- split; assumption.
-        -- assert (H5: ~(ax_s5 G x /\ ax_s5 G (Neg x))).
-          ++ apply consistent_xor, H2.
-          ++ contradiction.
+    + exfalso. apply (consistent_xor G f).
+      * assumption.
+      * split.
+        -- assumption.
+        -- apply a_0. assumption.
 Qed.
 
 Lemma max_con_subset (G : Form -> Prop) :
-  subset G (max_consistent G).
-
-
-
+  consistent G -> subset G (max_consistent G).
+Proof.
+  intros H0 f H1. split.
+  - assumption.
+  - left. assumption.
+Qed.

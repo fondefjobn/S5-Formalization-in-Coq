@@ -7,6 +7,6 @@ Admitted.
 Definition encode : Form -> nat.
 Admitted.
 
-Lemma decode_encode n :
+Lemma decode_encode (n : nat) :
   encode (decode n) = n.
 Admitted.

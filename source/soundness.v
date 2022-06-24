@@ -51,6 +51,11 @@ Proof.
     intros y EG. unfold empty_set in EG. contradiction.
 Qed.
 
+Lemma ax_s5_dne (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Impl (Neg (Neg x)) x).
+Proof.
+Admitted.
+
 Lemma deduce_subset (F G : Form -> Prop) (x : Form) :
   ax_s5 F x /\ subset F G -> ax_s5 G x.
 Proof.
