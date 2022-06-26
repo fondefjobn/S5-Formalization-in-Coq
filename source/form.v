@@ -9,6 +9,8 @@ Inductive Form : Type :=
 
 Definition Neg (f : Form) := Impl f F_.
 
+Definition T_ := Neg F_.
+
 Definition Disj (f1 f2 : Form) := Impl (Neg f1) f2.
 
 Definition Conj (f1 f2 : Form) := Neg (Disj (Neg f1) (Neg f2)).

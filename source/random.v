@@ -1,4 +1,6 @@
 
+From S5 Require Export model.
+
 Lemma excluded_middle_double_negation (f : Form) (m : model) (w : m) :
   ~~(interpret f m w \/ not (interpret f m w)).
 Proof.

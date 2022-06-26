@@ -1,6 +1,4 @@
 
-From S5 Require Export model.
-From S5 Require Export form.
 From S5 Require Export set.
 
 Axiom excluded_middle : forall (P : Prop), P \/ ~P.
@@ -51,15 +49,89 @@ Proof.
     intros y EG. unfold empty_set in EG. contradiction.
 Qed.
 
+Lemma ax_s5_self_impl (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Impl x x).
+Proof.
+  eapply mp.
+  - eapply mp.
+    + apply a_2.
+    + apply a_1.
+  - apply a_1 with (y:=x).
+Qed.
+
+Lemma ax_s5_truth (G : Form -> Prop) :
+  ax_s5 G T_.
+Proof.
+  unfold T_, Neg. apply ax_s5_self_impl.
+Qed.
+
+Lemma ax_s5_trivial_impl G p q :
+ax_s5 G q -> ax_s5 G (Impl p q).
+Proof.
+  intros H. eapply mp.
+  - apply a_1.
+  - assumption.
+Qed.
+
+Lemma ax_s5_hs (G : Form -> Prop) (x y z : Form) :
+  ax_s5 G (Impl (Impl y z) (Impl (Impl x y) (Impl x z))).
+Proof.
+  eapply mp.
+  - eapply mp.
+    + apply a_2.
+    + eapply mp.
+      * apply a_1.
+      * apply a_2.
+  - apply a_1.
+Qed.
+
+Lemma ax_s5_hs_infer (G : Form -> Prop) (x y z : Form) :
+  ax_s5 G (Impl y z) -> ax_s5 G (Impl x y) -> ax_s5 G (Impl x z).
+Proof.
+  intros H0 H1. eapply mp.
+  - eapply mp.
+    + apply ax_s5_hs.
+    + apply H0.
+  - assumption.
+Qed.
+
+Lemma ax_s5_triple_impl (G : Form -> Prop) (x y : Form) :
+  ax_s5 G (Impl x (Impl (Impl x y) y)).
+Proof.
+  eapply mp.
+  - eapply mp.
+    + apply ax_s5_hs.
+    + eapply mp.
+      * apply a_2.
+      * apply ax_s5_self_impl.
+  - apply a_1.
+Qed.
+
 Lemma ax_s5_dne (G : Form -> Prop) (x : Form) :
   ax_s5 G (Impl (Neg (Neg x)) x).
 Proof.
+  eapply ax_s5_hs_infer.
+  - apply (mp _ (Impl x (Impl x x))).
+    + apply ax_s5_triple_impl.
+    + apply a_1.
+  - eapply ax_s5_hs_infer.
+    + eapply ax_s5_hs_infer.
+      * apply a_3.
+      * apply a_3.
+    + apply a_1.
+Qed.
+
+Lemma ax_s5_not_neg_truth (G : Form -> Prop) :
+  ~ax_s5 G (Neg T_).
+Proof.
+  intros H. unfold Neg, T_ in H.
+  - eapply mp in H.
 Admitted.
 
-Lemma deduce_subset (F G : Form -> Prop) (x : Form) :
-  ax_s5 F x /\ subset F G -> ax_s5 G x.
+Lemma ax_s5_subset (F G : Form -> Prop) (x : Form) :
+  ax_s5 F x -> subset F G -> ax_s5 G x.
 Proof.
-  intros [Hf HG].
+  intros Hf HG.
   induction Hf.
   - apply a_0, HG. assumption.
   - apply a_1.
@@ -75,31 +147,11 @@ Proof.
   - apply nec. assumption.
 Qed.
 
-Lemma deduce_impl G p q :
-ax_s5 G q -> ax_s5 G (Impl p q).
-Proof.
-  intros H. eapply mp.
-  - apply a_1.
-  - assumption.
-Qed.
-
-Lemma deduce_self_impl (G : Form -> Prop) (x : Form) :
-  ax_s5 G (Impl x x).
-Proof.
-  eapply mp.
-  - eapply mp.
-    + apply a_2.
-    + apply a_1.
-  - assert (H: ax_s5 G (Impl x (Impl x x))).
-    + apply a_1.
-    + apply H. 
-Qed.
-
 Lemma deduction_theorem_1 (G : Form -> Prop) (x y : Form) :
   ax_s5 G (Impl x y) -> ax_s5 (add_singleton G x) y.
 Proof.
   intros H0. eapply mp.
-  - eapply deduce_subset. split.
+  - eapply ax_s5_subset.
     + apply H0.
     + apply subset_add_singleton.
   - apply a_0. apply member_add_singleton.
@@ -110,21 +162,21 @@ Lemma deduction_theorem_2 (G : Form -> Prop) (x y : Form) :
 Proof.
   intros H0. remember (add_singleton G x) as G'. induction H0; subst.
   - destruct H as [H1|H2].
-    + rewrite H1. apply deduce_self_impl.
-    + apply deduce_impl, a_0, H2.
-  - apply deduce_impl, a_1.
-  - apply deduce_impl, a_2.
-  - apply deduce_impl, a_3.
-  - apply deduce_impl, a_k.
-  - apply deduce_impl, a_t.
-  - apply deduce_impl, a_4.
-  - apply deduce_impl, a_b.
+    + rewrite H1. apply ax_s5_self_impl.
+    + apply ax_s5_trivial_impl, a_0, H2.
+  - apply ax_s5_trivial_impl, a_1.
+  - apply ax_s5_trivial_impl, a_2.
+  - apply ax_s5_trivial_impl, a_3.
+  - apply ax_s5_trivial_impl, a_k.
+  - apply ax_s5_trivial_impl, a_t.
+  - apply ax_s5_trivial_impl, a_4.
+  - apply ax_s5_trivial_impl, a_b.
   - eapply mp.
     + eapply mp.
       * apply a_2.
       * apply IHax_s5_1. reflexivity.
     + eapply IHax_s5_2. reflexivity.
-  - apply deduce_impl, nec, H0.
+  - apply ax_s5_trivial_impl, nec, H0.
 Qed.
 
 Lemma deduction_theorem (G : Form -> Prop) (x y : Form) :
@@ -135,70 +187,20 @@ Proof.
     - apply deduction_theorem_2.
 Qed.
 
-Lemma deduce_empty (G : Form -> Prop) (x : Form) :
+Lemma ax_s5_empty (G : Form -> Prop) (x : Form) :
   ax_s5 empty_set x -> ax_s5 G x.
 Proof.
-  intros H. eapply deduce_subset. split.
+  intros H. eapply ax_s5_subset.
   - apply H.
   - apply empty_subset.
 Qed.
 
-Lemma deduce_member (G : Form -> Prop) (x : Form) :
-  G x -> ax_s5 G x.
-Proof.
-  intros H. apply a_0, H.
-Qed.
-
-Lemma deduce_singleton (G : Form -> Prop) (x y : Form) :
+Lemma ax_s5_singleton (G : Form -> Prop) (x y : Form) :
   ax_s5 G x /\ ax_s5 (singleton x) y -> ax_s5 G y.
 Proof.
   intros [H0 H1]. eapply mp.
-  - apply deduction_theorem. eapply deduce_subset. split.
+  - apply deduction_theorem. eapply ax_s5_subset.
     + apply H1.
     + apply subset_singleton.
   - assumption.
-Qed.
-
-Definition consistent (G : Form -> Prop) : Prop :=
-  ~(ax_s5 G F_).
-
-Lemma consistent_xor (G : Form -> Prop) (x : Form) :
-  consistent G -> ~(ax_s5 G x /\ ax_s5 G (Neg x)).
-Proof.
-  intros H0 [H1 H2]. apply H0. unfold Neg in H2. eapply mp.
-  - apply H2.
-  - assumption.
-Qed.
-
-Lemma consistent_subset (F G : Form -> Prop) :
-  subset F G /\ consistent G -> consistent F.
-Proof.
-  intros [Hs Hcon] Hf. unfold consistent, not in Hcon. apply Hcon.
-  eapply deduce_subset. split.
-  - apply Hf.
-  - assumption. 
-Qed.
-
-Lemma deduce_not_consistent_add_neg_singleton (G : Form -> Prop) (x : Form) :
-  consistent G /\ ax_s5 G x -> ~consistent (add_singleton G (Neg x)).
-Proof.
-  intros [H0 H1] H2. eapply consistent_xor.
-  - apply H2.
-  - split.
-    + eapply deduce_subset. split.
-      * apply H1.
-      * apply subset_add_singleton. 
-    + apply deduce_member. apply member_add_singleton.
-Qed.
-
-Lemma consistent_add_singleton_not_deduce (G : Form -> Prop) (x : Form) :
-  consistent (add_singleton G x) -> ~ax_s5 G (Neg x).
-Proof.
-  intros H0 H1. eapply consistent_xor.
-  - apply H0.
-  - split.
-    + apply a_0. apply member_add_singleton.
-    + eapply deduce_subset. split.
-      * apply H1.
-      * apply subset_add_singleton.
 Qed.

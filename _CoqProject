@@ -4,7 +4,8 @@ source/model.v
 source/form.v
 source/set.v
 source/soundness.v
+source/consistent.v
 source/encode.v
-source/completeness.v
+source/maximal.v
 source/modelExample.v
 source/random.v
