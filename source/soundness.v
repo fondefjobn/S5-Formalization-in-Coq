@@ -121,11 +121,25 @@ Proof.
     + apply a_1.
 Qed.
 
-Lemma ax_s5_not_neg_truth (G : Form -> Prop) :
-  ~ax_s5 G (Neg T_).
+Lemma ax_s5_dne_infer (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Neg (Neg x)) -> ax_s5 G x.
 Proof.
-  intros H. unfold Neg, T_ in H.
-  - eapply mp in H.
+  intros H. eapply mp.
+    - apply ax_s5_dne.
+    - assumption.
+Qed.
+
+Lemma ax_s5_not_neg_truth (G : Form -> Prop) :
+  ax_s5 G (Neg T_) -> ax_s5 G F_.
+Proof.
+  intros H. unfold T_ in H. apply ax_s5_dne_infer. assumption.
+Qed.
+
+Lemma ax_s5_conj_infer (F G : Form -> Prop) (x y : Form) :
+  ax_s5 G (Conj x y) -> (ax_s5 G x /\ ax_s5 G y).
+Proof.
+  intros H0. split.
+  - unfold Conj, Disj, Neg in H0.
 Admitted.
 
 Lemma ax_s5_subset (F G : Form -> Prop) (x : Form) :

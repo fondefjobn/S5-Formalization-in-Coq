@@ -52,7 +52,7 @@ Lemma step_maximal (G : Form -> Prop) (x : Form) :
 Proof.
   intros H0. pose (n := encode x). fold n. assert (H1: decode (encode x) = x).
   { apply encode_decode. }
-   destruct (excluded_middle (consistent (add_singleton (step G (encode x)) x))) as [H2|H2].
+  destruct (excluded_middle (consistent (add_singleton (step G (encode x)) x))) as [H2|H2].
   - left. simpl. unfold insert. right. left. unfold n. rewrite H1. split.
     + assumption.
     + reflexivity.
@@ -80,11 +80,11 @@ Qed.
 Lemma max_consistent_set_consistent (G : Form -> Prop) :
   consistent G -> consistent (max_consistent_set G).
 Proof.
-  intros H0 H1. unfold max_consistent_set in H1. remember (big_union (step G)) as G'.
+  intros H0 H1.
+  unfold max_consistent_set in H1.
+  remember (big_union (step G)) as G'.
   induction H1; subst.
-  - unfold big_union in H. destruct H as [n]. pose (m := n - 1).
-    assert (H2: S m = n). { admit. }
-    rewrite <- H2 in H. simpl in H. unfold insert in H.
+  - unfold big_union in H. destruct H as [n].
 Admitted.
 
 Definition max_consistent (G : Form -> Prop) : Prop :=
@@ -131,7 +131,9 @@ Proof.
   destruct H2 as [H2|H2].
   - assumption.
   - exfalso. unfold max_consistent_set, big_union in H2. destruct H2 as [n].
-    apply a_0 in H. eapply ax_s5_not_neg_truth, H.
+    apply a_0 in H. eapply step_consistent.
+    + apply H0.
+    + apply ax_s5_not_neg_truth, H.
 Qed.
 
 Lemma max_consistent_false (G : Form -> Prop) :
@@ -193,7 +195,17 @@ Proof.
             ** assumption.
             ** apply max_consistent_subset, H0.
           ++ apply a_0, H3.
-  - unfold max_consistent_set, big_union in H4. destruct H4 as [n H4]. induction n.
+  - unfold max_consistent_set, big_union in H4. destruct H4 as [n H4].
+(*
+    unfold max_consistent_set, big_union in H3. destruct H3 as [H3|H3].
+    + destruct H3 as [n' H3]. destruct (excluded_middle (n > n')).
+      * induction n.
+        -- admit.
+        -- *)
+
+
+
+    induction n.
     + unfold step in H4. apply a_0, H4.
     + unfold max_consistent_set, big_union in H3. 
       simpl in H4. unfold insert in H4. destruct H4 as [H4|[H4|H4]].
