@@ -1,5 +1,5 @@
 
-From S5 Require Export soundness.
+From S5 Require Export deduce.
 
 Definition consistent (G : Form -> Prop) : Prop :=
   ~(ax_s5 G F_).
@@ -22,28 +22,38 @@ Proof.
 Qed.
 
 Lemma deduce_not_consistent_add_neg_singleton (G : Form -> Prop) (x : Form) :
-  consistent G /\ ax_s5 G x -> ~consistent (add_singleton G (Neg x)).
+  consistent G -> ax_s5 G x <-> ~consistent (add_singleton G (Neg x)).
 Proof.
-  intros [H0 H1] H2. eapply consistent_xor.
-  - apply H2.
-  - split.
-    + eapply ax_s5_subset.
-      * apply H1.
-      * apply subset_add_singleton. 
-    + apply a_0. apply member_add_singleton.
-Qed.
+  intros H0. split; intros H1.
+  - intros H2. eapply consistent_xor.
+    + apply H2.
+    + split.
+      * eapply ax_s5_subset.
+        -- apply H1.
+        -- apply subset_add_singleton. 
+      * apply a_0. apply member_add_singleton.
+  - unfold consistent in H1. apply double_negation_elimination in H1.
+    assert (H2: ax_s5 G (Impl (Neg x) F_)).
+    { apply deduction_theorem. assumption. }
+    assert (H3: ax_s5 (singleton (Impl (Neg x) F_)) x).
+    { admit. }
+    eapply ax_s5_singleton.
+    + apply H2.
+    + assumption.
+Admitted.
 
 Lemma consistent_add_singleton_not_deduce (G : Form -> Prop) (x : Form) :
-  consistent (add_singleton G x) -> ~ax_s5 G (Neg x).
+  consistent G -> consistent (add_singleton G x) <-> ~ax_s5 G (Neg x).
 Proof.
-  intros H0 H1. eapply consistent_xor.
-  - apply H0.
-  - split.
+  split.
+  - intros H0 H1. eapply consistent_xor.
+    { apply H0. }
+    split.
     + apply a_0. apply member_add_singleton.
     + eapply ax_s5_subset.
-      * apply H1.
-      * apply subset_add_singleton.
-Qed.
+      { apply H1. }
+      apply subset_add_singleton.
+Admitted.
 
 Lemma inconsistent_consistent (G : Form -> Prop) (x : Form) : 
   consistent G -> 
@@ -83,4 +93,12 @@ Proof.
   destruct (excluded_middle (consistent (add_singleton G x))) as [H1|H1].
   { left. assumption. }
   right. apply inconsistent_consistent; assumption.
+Qed.
+
+Lemma consistent_member_neg (G : Form -> Prop) (x : Form) :
+  consistent G -> G x -> ~ G (Neg x).
+Proof.
+  intros conG Gx Gnx. apply (consistent_xor G x).
+  { assumption. }
+  split; apply a_0; assumption.
 Qed.

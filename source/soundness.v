@@ -1,7 +1,6 @@
 
+From S5 Require Export prop.
 From S5 Require Export set.
-
-Axiom excluded_middle : forall (P : Prop), P \/ ~P.
 
 Inductive ax_s5 : (Form -> Prop) -> Form -> Prop :=
   | a_0 G (x : Form) : (G x : Prop) -> ax_s5 G x
@@ -25,13 +24,11 @@ Proof.
   - intros XYZ XY X. simpl in XYZ, XY. apply XYZ.
     + assumption.
     + apply XY, X.
-  - simpl. intros XFYF Y. assert (H: interpret x M W1 \/ (interpret x M W1 -> False)).
-    + apply excluded_middle.
-    + destruct H.
+  - simpl. intros XFYF Y. destruct (excluded_middle (interpret x M W1)) as [H1|H1].
+    + assumption.
+    + apply XFYF in Y.
+      * contradiction.
       * assumption.
-      * apply XFYF in Y.
-        -- contradiction.
-        -- assumption.
   - intros XY X W2 R. simpl in XY, X. specialize (XY W2). specialize (X W2). apply XY.
     + assumption.
     + apply X, R.
@@ -44,7 +41,7 @@ Proof.
     + assumption.
   - simpl in IHax_s5_1. apply IHax_s5_1.
     + apply HW.
-    + apply IHax_s5_2. apply HW.
+    + apply IHax_s5_2, HW.
   - intros W2 R. specialize (IHax_s5 W2). apply IHax_s5.
     intros y EG. unfold empty_set in EG. contradiction.
 Qed.
@@ -65,8 +62,8 @@ Proof.
   unfold T_, Neg. apply ax_s5_self_impl.
 Qed.
 
-Lemma ax_s5_trivial_impl G p q :
-ax_s5 G q -> ax_s5 G (Impl p q).
+Lemma ax_s5_trivial_impl (G : Form -> Prop) (x y : Form) :
+ax_s5 G y -> ax_s5 G (Impl x y).
 Proof.
   intros H. eapply mp.
   - apply a_1.
@@ -135,86 +132,54 @@ Proof.
   intros H. unfold T_ in H. apply ax_s5_dne_infer. assumption.
 Qed.
 
-Lemma ax_s5_conj_infer (F G : Form -> Prop) (x y : Form) :
-  ax_s5 G (Conj x y) -> (ax_s5 G x /\ ax_s5 G y).
+Lemma ax_s5_df_diamond (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Diamond x) <-> ax_s5 G (Neg (Box (Neg x))).
 Proof.
-  intros H0. split.
-  - unfold Conj, Disj, Neg in H0.
-Admitted.
-
-Lemma ax_s5_subset (F G : Form -> Prop) (x : Form) :
-  ax_s5 F x -> subset F G -> ax_s5 G x.
-Proof.
-  intros Hf HG.
-  induction Hf.
-  - apply a_0, HG. assumption.
-  - apply a_1.
-  - apply a_2.
-  - apply a_3.
-  - apply a_k.
-  - apply a_t.
-  - apply a_4.
-  - apply a_b.
-  - eapply mp.
-    + apply IHHf1. assumption.
-    + apply IHHf2. assumption.
-  - apply nec. assumption.
+  split; intros H; assumption.
 Qed.
 
-Lemma deduction_theorem_1 (G : Form -> Prop) (x y : Form) :
-  ax_s5 G (Impl x y) -> ax_s5 (add_singleton G x) y.
+Lemma ax_s5_t_diamond (G : Form -> Prop) (x : Form) :
+  ax_s5 G x -> ax_s5 G (Diamond x).
 Proof.
   intros H0. eapply mp.
-  - eapply ax_s5_subset.
-    + apply H0.
-    + apply subset_add_singleton.
-  - apply a_0. apply member_add_singleton.
-Qed.
-
-Lemma deduction_theorem_2 (G : Form -> Prop) (x y : Form) :
-  ax_s5 (add_singleton G x) y -> ax_s5 G (Impl x y).
-Proof.
-  intros H0. remember (add_singleton G x) as G'. induction H0; subst.
-  - destruct H as [H1|H2].
-    + rewrite H1. apply ax_s5_self_impl.
-    + apply ax_s5_trivial_impl, a_0, H2.
-  - apply ax_s5_trivial_impl, a_1.
-  - apply ax_s5_trivial_impl, a_2.
-  - apply ax_s5_trivial_impl, a_3.
-  - apply ax_s5_trivial_impl, a_k.
-  - apply ax_s5_trivial_impl, a_t.
-  - apply ax_s5_trivial_impl, a_4.
-  - apply ax_s5_trivial_impl, a_b.
+  - apply a_t.
   - eapply mp.
-    + eapply mp.
-      * apply a_2.
-      * apply IHax_s5_1. reflexivity.
-    + eapply IHax_s5_2. reflexivity.
-  - apply ax_s5_trivial_impl, nec, H0.
+    + apply a_b.
+    + assumption.
 Qed.
 
-Lemma deduction_theorem (G : Form -> Prop) (x y : Form) :
-  ax_s5 G (Impl x y) <-> ax_s5 (add_singleton G x) y.
+Lemma ax_s5_d (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Box x) -> ax_s5 G (Diamond x).
 Proof.
-  split.
-    - apply deduction_theorem_1.
-    - apply deduction_theorem_2.
-Qed.
-
-Lemma ax_s5_empty (G : Form -> Prop) (x : Form) :
-  ax_s5 empty_set x -> ax_s5 G x.
-Proof.
-  intros H. eapply ax_s5_subset.
-  - apply H.
-  - apply empty_subset.
-Qed.
-
-Lemma ax_s5_singleton (G : Form -> Prop) (x y : Form) :
-  ax_s5 G x /\ ax_s5 (singleton x) y -> ax_s5 G y.
-Proof.
-  intros [H0 H1]. eapply mp.
-  - apply deduction_theorem. eapply ax_s5_subset.
-    + apply H1.
-    + apply subset_singleton.
+  intros H. apply ax_s5_t_diamond. eapply mp.
+  - apply a_t.
   - assumption.
 Qed.
+
+Lemma ax_s5_rm (x y : Form) :
+  ax_s5 empty_set (Impl x y) -> ax_s5 empty_set (Impl (Box x) (Box y)).
+Proof.
+  intros H. eapply mp.
+  - apply a_k.
+  - apply nec, H.
+Qed.
+
+Lemma ax_s5_df_box (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Box x) <-> ax_s5 G (Neg (Diamond (Neg x))).
+Proof.
+  assert (H0: ax_s5 G (Diamond (Neg x)) <-> ax_s5 G (Neg (Box (Neg (Neg x))))).
+  { apply ax_s5_df_diamond. }
+  destruct H0 as [H0 H1].
+Admitted.
+
+Lemma ax_s5_4_diamond (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Diamond (Diamond x)) -> ax_s5 G (Diamond x).
+Proof.
+  intros H0. eapply mp.
+Admitted.
+
+Lemma ax_s5_b_diamond (G : Form -> Prop) (x : Form) :
+  ax_s5 G (Diamond (Box x)) -> ax_s5 G x.
+Proof.
+  intros H0. eapply mp.
+Admitted.

@@ -1,11 +1,14 @@
 -Q source S5
 
+source/prop.v
+source/nat.v
 source/model.v
 source/form.v
 source/set.v
 source/soundness.v
+source/deduce.v
 source/consistent.v
 source/encode.v
 source/maximal.v
+source/canonical.v
 source/modelExample.v
-source/random.v

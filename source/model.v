@@ -30,4 +30,3 @@ Lemma sym (m : model) :
 Proof.
   apply m.
 Qed.
-

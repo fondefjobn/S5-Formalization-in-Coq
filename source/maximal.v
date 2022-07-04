@@ -1,6 +1,7 @@
 
 From S5 Require Export consistent.
 From S5 Require Export encode.
+From S5 Require Export nat.
 
 Definition insert (G : Form -> Prop) (n : nat) : (Form -> Prop) := 
   fun g =>
@@ -47,6 +48,22 @@ Proof.
   - simpl. apply insert_consistent, IHn.
 Qed.
 
+Lemma step_subset (G : Form -> Prop) (n : nat) :
+  subset G (step G n).
+Proof.
+  intros f H0. induction n.
+  - unfold step. assumption.
+  - simpl. unfold insert. left. assumption.
+Qed.
+
+Lemma step_subset_2 (G : Form -> Prop) (i j : nat) :
+  i <= j -> subset (step G i) (step G j).
+Proof.
+  intros H0 f H1. induction H0.
+  - assumption.
+  - left. assumption.
+Qed.
+
 Lemma step_maximal (G : Form -> Prop) (x : Form) :
   consistent G -> step G (S (encode x)) x \/ step G (S (encode x)) (Neg x).
 Proof.
@@ -67,6 +84,48 @@ Definition big_union (F : nat -> (Form -> Prop)) (x : Form) : Prop :=
 Definition max_consistent_set (G : Form -> Prop) : Form -> Prop :=
   big_union (step G).
 
+Lemma lindenbaum_lemma (G : Form -> Prop) (f : Form) :
+  ax_s5 (big_union (step G)) f -> exists i, ax_s5 (step G i) f.
+Proof.
+  intros H1. remember (big_union (step G)) as G'.
+  induction H1; subst.
+  - unfold big_union in H. destruct H as [j Hj].
+    exists j. apply a_0. assumption.
+  - exists 0. apply a_1.
+  - exists 0. apply a_2.
+  - exists 0. apply a_3.
+  - exists 0. apply a_k.
+  - exists 0. apply a_t.
+  - exists 0. apply a_4.
+  - exists 0. apply a_b.
+  - assert (IH1 : exists i : nat, ax_s5 (step G i) (Impl x y)).
+    { apply IHax_s5_1. reflexivity. }
+    assert (IH2 : exists i : nat, ax_s5 (step G i) x).
+    { apply IHax_s5_2. reflexivity. }
+    destruct IH1 as [i IH1]. destruct IH2 as [j IH2].
+    destruct (less_equal_or i j) as [H2|H2].
+    + exists j. eapply mp.
+      * eapply ax_s5_subset.
+        -- apply IH1.
+        -- apply step_subset_2. assumption.
+      * assumption.
+    + exists i. eapply mp.
+      * apply IH1.
+      * eapply ax_s5_subset.
+        -- apply IH2.
+        -- apply step_subset_2, H2.
+  - exists 0. apply nec. assumption.
+Qed.
+
+Lemma max_consistent_set_consistent (G : Form -> Prop) :
+  consistent G -> consistent (max_consistent_set G).
+Proof.
+  intros H0 H1. apply lindenbaum_lemma in H1. 
+  destruct H1. eapply step_consistent.
+  - apply H0.
+  - apply H.
+Qed.
+
 Lemma max_consistent_set_maximal (G : Form -> Prop) (f : Form) :
   consistent G -> max_consistent_set G f \/ max_consistent_set G (Neg f).
 Proof.
@@ -76,16 +135,6 @@ Proof.
   - left. exists (S n). assumption.
   - right. exists (S n). assumption.
 Qed.
-
-Lemma max_consistent_set_consistent (G : Form -> Prop) :
-  consistent G -> consistent (max_consistent_set G).
-Proof.
-  intros H0 H1.
-  unfold max_consistent_set in H1.
-  remember (big_union (step G)) as G'.
-  induction H1; subst.
-  - unfold big_union in H. destruct H as [n].
-Admitted.
 
 Definition max_consistent (G : Form -> Prop) : Prop :=
   consistent G /\ forall x, (G x \/ G (Neg x)).
@@ -97,6 +146,15 @@ Proof.
   unfold max_consistent. split.
   - apply max_consistent_set_consistent. assumption.
   - intros f. apply max_consistent_set_maximal. assumption.
+Qed.
+
+Lemma max_consistent_subset (G : Form -> Prop) :
+  consistent G -> subset G (max_consistent_set G).
+Proof.
+  intros H0 f H1. unfold max_consistent_set, big_union. pose (n := encode f).
+  exists n. induction n.
+  - unfold step. assumption.
+  - simpl. apply insert_subset. assumption.
 Qed.
 
 Lemma max_consistent_member (G : Form -> Prop) (f : Form) :
@@ -113,14 +171,49 @@ Proof.
         -- apply a_0. assumption.
 Qed.
 
-Lemma max_consistent_subset (G : Form -> Prop) :
-  consistent G -> subset G (max_consistent_set G).
+Lemma max_consistent_member_2 (G : Form -> Prop) (f : Form) :
+  consistent G -> (ax_s5 G f <-> max_consistent_set G f).
 Proof.
-  intros H0 f H1. unfold max_consistent_set, big_union. pose (n := encode f).
-  exists n. induction n.
-  - unfold step. assumption.
-  - simpl. apply insert_subset. assumption.
-Qed.
+  intros H0. assert (H1: max_consistent (max_consistent_set G)).
+  { apply max_consistent_set_correct, H0. }
+  unfold max_consistent in H1. destruct H1 as [H2 H3].
+  split; intros H4; specialize (H3 f).
+  - destruct (excluded_middle (max_consistent_set G f)).
+    + assumption.
+    + exfalso. destruct H3 as [H3|H3].
+      * contradiction. 
+      * apply (consistent_xor (max_consistent_set G) f).
+        -- assumption.
+        -- split.
+          ++ apply (ax_s5_subset G (max_consistent_set G)).
+            ** assumption.
+            ** apply max_consistent_subset, H0.
+          ++ apply a_0, H3.
+  - destruct (excluded_middle (ax_s5 G f)).
+    + assumption.
+    + exfalso.
+Admitted.
+
+Lemma max_consistent_member_3 (G : Form -> Prop) (f : Form) :
+  consistent G -> (ax_s5 empty_set f <-> max_consistent_set G f).
+Proof.
+  intros H0. assert (H1: max_consistent (max_consistent_set G)).
+  { apply max_consistent_set_correct, H0. }
+  unfold max_consistent in H1. destruct H1 as [H2 H3].
+  split; intros H4; specialize (H3 f).
+  - destruct (excluded_middle (max_consistent_set G f)).
+    + assumption.
+    + exfalso. destruct H3 as [H3|H3].
+      * contradiction. 
+      * apply (consistent_xor (max_consistent_set G) f).
+        -- assumption.
+        -- split.
+          ++ apply (ax_s5_subset empty_set (max_consistent_set G)).
+            ** assumption.
+            ** apply empty_subset.
+          ++ apply a_0, H3. 
+  - admit.
+Admitted.
 
 Lemma max_consistent_truth (G : Form -> Prop) :
   consistent G -> max_consistent_set G T_.
@@ -143,105 +236,3 @@ Proof.
   { apply max_consistent_set_correct, H0. }
   unfold max_consistent in H2. destruct H2 as [H2 H3]. apply H2. apply a_0, H1.
 Qed.
-
-Lemma max_consistent_neg (G : Form -> Prop) (f : Form) :
-  consistent G -> (max_consistent_set G (Neg f) <-> ~max_consistent_set G f).
-Proof.
-  intros H0. assert (H1: max_consistent (max_consistent_set G)).
-  { apply max_consistent_set_correct, H0. }
-  unfold max_consistent in H1. destruct H1 as [H1 H2].
-  split; intros H3.
-  - intros H4. eapply consistent_xor. 
-    + apply H1.
-    + split.
-      * apply max_consistent_member in H4.
-        -- apply H4.
-        -- unfold max_consistent. split; assumption.
-      * apply max_consistent_member in H3.
-        -- apply H3.
-        -- unfold max_consistent. split; assumption.
-  - specialize (H2 f). destruct H2 as [H2|H2].
-    + contradiction.
-    + assumption.
-Qed.
-
-Lemma max_consistent_conj (G : Form -> Prop) (f g : Form) :
-  consistent G ->
-  (max_consistent_set G (Conj f g) <-> max_consistent_set G f /\ max_consistent_set G g).
-Proof.
-  intros H0. assert (H1: max_consistent (max_consistent_set G)).
-  { apply max_consistent_set_correct, H0. }
-  unfold max_consistent in H1. destruct H1 as [H1 H2].
-  split; intros H3.
-  - split.
-    + unfold Conj, Disj in H3.
-Admitted.
-
-Lemma lindenbaum_lemma_1 (G : Form -> Prop) (f : Form) :
-  consistent G -> (ax_s5 G f <-> max_consistent_set G f).
-Proof.
-  intros H0. assert (H1: max_consistent (max_consistent_set G)).
-  { apply max_consistent_set_correct, H0. }
-  unfold max_consistent in H1. destruct H1 as [H2 H3].
-  split; intros H4; specialize (H3 f).
-  - destruct (excluded_middle (max_consistent_set G f)).
-    + assumption.
-    + exfalso. destruct H3 as [H3|H3].
-      * contradiction. 
-      * apply (consistent_xor (max_consistent_set G) f).
-        -- assumption.
-        -- split.
-          ++ apply (ax_s5_subset G (max_consistent_set G)).
-            ** assumption.
-            ** apply max_consistent_subset, H0.
-          ++ apply a_0, H3.
-  - unfold max_consistent_set, big_union in H4. destruct H4 as [n H4].
-(*
-    unfold max_consistent_set, big_union in H3. destruct H3 as [H3|H3].
-    + destruct H3 as [n' H3]. destruct (excluded_middle (n > n')).
-      * induction n.
-        -- admit.
-        -- *)
-
-
-
-    induction n.
-    + unfold step in H4. apply a_0, H4.
-    + unfold max_consistent_set, big_union in H3. 
-      simpl in H4. unfold insert in H4. destruct H4 as [H4|[H4|H4]].
-      * apply IHn, H4.
-      * destruct H4 as [H4 H5]. rewrite <- H5 in H4. destruct H3 as [H3|H3].
-        -- destruct H3 as [n']. assert (H6: n = n'). admit. rewrite <- H6 in H.
-           apply IHn, H.
-        -- destruct H3 as [n']. assert (H6: n = n'). admit. rewrite <- H6 in H.
-           exfalso. eapply deduce_not_consistent_add_neg_singleton. split.
-          ++ apply (step_consistent G), H0.
-          ++ apply a_0 in H. apply H.
-          ++ admit.
-      * destruct H4 as [H4 H5]. destruct H3 as [H3|H3].
-        -- destruct H3 as [n']. assert (H6: n = n'). admit. rewrite <- H6 in H.
-           apply IHn, H.
-        --
-Admitted.
-
-Lemma lindenbaum_lemma_2 (G : Form -> Prop) (f : Form) :
-  consistent G -> (ax_s5 empty_set f <-> max_consistent_set G f).
-Proof.
-  intros H0. assert (H1: max_consistent (max_consistent_set G)).
-  { apply max_consistent_set_correct, H0. }
-  unfold max_consistent in H1. destruct H1 as [H2 H3].
-  split; intros H4; specialize (H3 f).
-  - destruct (excluded_middle (max_consistent_set G f)).
-    + assumption.
-    + exfalso. destruct H3 as [H3|H3].
-      * contradiction. 
-      * apply (consistent_xor (max_consistent_set G) f).
-        -- assumption.
-        -- split.
-          ++ apply (ax_s5_subset empty_set (max_consistent_set G)).
-            ** assumption.
-            ** apply empty_subset.
-          ++ apply a_0, H3. 
-  - admit.
-Admitted.
-  
