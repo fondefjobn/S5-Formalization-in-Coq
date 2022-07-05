@@ -48,20 +48,19 @@ Proof.
   - simpl. apply insert_consistent, IHn.
 Qed.
 
-Lemma step_subset (G : Form -> Prop) (n : nat) :
-  subset G (step G n).
-Proof.
-  intros f H0. induction n.
-  - unfold step. assumption.
-  - simpl. unfold insert. left. assumption.
-Qed.
-
 Lemma step_subset_2 (G : Form -> Prop) (i j : nat) :
   i <= j -> subset (step G i) (step G j).
 Proof.
   intros H0 f H1. induction H0.
   - assumption.
   - left. assumption.
+Qed.
+
+Lemma step_subset (G : Form -> Prop) (n : nat) :
+  subset G (step G n).
+Proof.
+  apply (step_subset_2 _ 0).
+  apply le_0_n.
 Qed.
 
 Lemma step_maximal (G : Form -> Prop) (x : Form) :
@@ -172,13 +171,13 @@ Proof.
 Qed.
 
 Lemma max_consistent_member_2 (G : Form -> Prop) (f : Form) :
-  consistent G -> (ax_s5 G f <-> max_consistent_set G f).
+  consistent G -> ax_s5 G f -> max_consistent_set G f.
 Proof.
   intros H0. assert (H1: max_consistent (max_consistent_set G)).
   { apply max_consistent_set_correct, H0. }
   unfold max_consistent in H1. destruct H1 as [H2 H3].
-  split; intros H4; specialize (H3 f).
-  - destruct (excluded_middle (max_consistent_set G f)).
+  intros H4; specialize (H3 f).
+  destruct (excluded_middle (max_consistent_set G f)).
     + assumption.
     + exfalso. destruct H3 as [H3|H3].
       * contradiction. 
@@ -189,50 +188,64 @@ Proof.
             ** assumption.
             ** apply max_consistent_subset, H0.
           ++ apply a_0, H3.
-  - destruct (excluded_middle (ax_s5 G f)).
-    + assumption.
-    + exfalso.
-Admitted.
+Qed.
 
 Lemma max_consistent_member_3 (G : Form -> Prop) (f : Form) :
-  consistent G -> (ax_s5 empty_set f <-> max_consistent_set G f).
+  consistent G -> ax_s5 empty_set f -> max_consistent_set G f.
 Proof.
   intros H0. assert (H1: max_consistent (max_consistent_set G)).
   { apply max_consistent_set_correct, H0. }
   unfold max_consistent in H1. destruct H1 as [H2 H3].
-  split; intros H4; specialize (H3 f).
-  - destruct (excluded_middle (max_consistent_set G f)).
+  intros H4; specialize (H3 f).
+  destruct (excluded_middle (max_consistent_set G f)).
+  { assumption. }
+  exfalso. destruct H3 as [H3|H3].
+  { contradiction. } 
+  apply (consistent_xor (max_consistent_set G) f).
+  { assumption. }
+  split.
+  - apply (ax_s5_subset empty_set (max_consistent_set G)).
     + assumption.
-    + exfalso. destruct H3 as [H3|H3].
-      * contradiction. 
-      * apply (consistent_xor (max_consistent_set G) f).
-        -- assumption.
-        -- split.
-          ++ apply (ax_s5_subset empty_set (max_consistent_set G)).
-            ** assumption.
-            ** apply empty_subset.
-          ++ apply a_0, H3. 
-  - admit.
-Admitted.
-
-Lemma max_consistent_truth (G : Form -> Prop) :
-  consistent G -> max_consistent_set G T_.
-Proof.
-  intros H0. assert (H1: max_consistent (max_consistent_set G)).
-  { apply max_consistent_set_correct, H0. }
-  unfold max_consistent in H1. destruct H1 as [H1 H2]. specialize (H2 T_).
-  destruct H2 as [H2|H2].
-  - assumption.
-  - exfalso. unfold max_consistent_set, big_union in H2. destruct H2 as [n].
-    apply a_0 in H. eapply step_consistent.
-    + apply H0.
-    + apply ax_s5_not_neg_truth, H.
+    + apply empty_subset.
+  - apply a_0, H3.
 Qed.
 
 Lemma max_consistent_false (G : Form -> Prop) :
-  consistent G -> ~max_consistent_set G F_.
+  max_consistent G -> ~G F_.
 Proof.
-  intros H0 H1. assert (H2: max_consistent (max_consistent_set G)).
-  { apply max_consistent_set_correct, H0. }
-  unfold max_consistent in H2. destruct H2 as [H2 H3]. apply H2. apply a_0, H1.
+  intros mcsG GF_. destruct mcsG as [conG _].
+  apply conG. apply a_0, GF_.
 Qed.
+
+Lemma max_consistent_impl (G : Form -> Prop) (x y : Form) :
+  max_consistent G -> (~G x \/ G y <-> G (Impl x y)).
+Proof.
+  intros mcsG. split; intros H.
+  - destruct (excluded_middle (G (Impl x y))) as [Gxy | nGxy].
+    { assumption. }
+    destruct mcsG as [conG orG].
+    specialize (orG (Impl x y)) as orGxy.
+    destruct orGxy as [Gxy | Gnxy].
+    { contradiction. }
+    exfalso. apply a_0 in Gnxy.
+    destruct H as [nGx | Gy].
+    + assert (Gx: ax_s5 G x).
+      { admit. }
+      apply max_consistent_member in Gx.
+      2: { split; assumption. }
+      contradiction.
+    + assert (Gny: ax_s5 G (Neg y)).
+      { admit. }
+      apply max_consistent_member in Gny.
+      2: { split; assumption. }
+      apply (consistent_member_neg G y); assumption.
+  - destruct (excluded_middle (G x)) as [Gx | nGx].
+    2: { left. assumption. }
+    right. apply max_consistent_member.
+    { assumption. }
+    eapply mp; apply -> max_consistent_member.
+    + apply H.
+    + assumption.
+    + assumption.
+    + assumption.
+Admitted.

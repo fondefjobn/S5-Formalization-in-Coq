@@ -5,7 +5,11 @@ source/nat.v
 source/model.v
 source/form.v
 source/set.v
+source/proof.v
 source/soundness.v
+source/tautologies.v
+source/inference.v
+source/inference_modal.v
 source/deduce.v
 source/consistent.v
 source/encode.v

@@ -1,5 +1,5 @@
 
-From S5 Require Export soundness.
+From S5 Require Export tautologies.
 
 Lemma ax_s5_subset (F G : Form -> Prop) (x : Form) :
   ax_s5 F x -> subset F G -> ax_s5 G x.
@@ -36,20 +36,20 @@ Proof.
   intros H0. remember (add_singleton G x) as G'. induction H0; subst.
   - destruct H as [H1|H2].
     + rewrite H1. apply ax_s5_self_impl.
-    + apply ax_s5_trivial_impl, a_0, H2.
-  - apply ax_s5_trivial_impl, a_1.
-  - apply ax_s5_trivial_impl, a_2.
-  - apply ax_s5_trivial_impl, a_3.
-  - apply ax_s5_trivial_impl, a_k.
-  - apply ax_s5_trivial_impl, a_t.
-  - apply ax_s5_trivial_impl, a_4.
-  - apply ax_s5_trivial_impl, a_b.
+    + eapply mp. apply a_1. apply a_0, H2.
+  - eapply mp. apply a_1. apply a_1.
+  - eapply mp. apply a_1. apply a_2.
+  - eapply mp. apply a_1. apply a_3.
+  - eapply mp. apply a_1. apply a_k.
+  - eapply mp. apply a_1. apply a_t.
+  - eapply mp. apply a_1. apply a_4.
+  - eapply mp. apply a_1. apply a_b.
   - eapply mp.
     + eapply mp.
       * apply a_2.
       * apply IHax_s5_1. reflexivity.
     + eapply IHax_s5_2. reflexivity.
-  - apply ax_s5_trivial_impl, nec, H0.
+  - eapply mp. apply a_1. apply nec, H0.
 Qed.
 
 Lemma deduction_theorem (G : Form -> Prop) (x y : Form) :

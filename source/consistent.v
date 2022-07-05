@@ -1,5 +1,6 @@
 
 From S5 Require Export deduce.
+From S5 Require Export prop.
 
 Definition consistent (G : Form -> Prop) : Prop :=
   ~(ax_s5 G F_).
