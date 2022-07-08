@@ -217,6 +217,19 @@ Proof.
   apply conG. apply a_0, GF_.
 Qed.
 
+Lemma max_consistent_neg (G : Form -> Prop) (f : Form) :
+  max_consistent G -> (G (Neg f) <-> ~G f).
+Proof.
+  intros mcsG. destruct mcsG as [conG orG].
+  split.
+  - intros Gf Gnf. apply (consistent_xor G f). 
+    + assumption.
+    + split; apply a_0; assumption.
+  - intros nGf. specialize (orG f). destruct orG as [Gf | Gfn].
+    + contradiction.
+    + assumption.
+Qed.
+
 Lemma max_consistent_impl (G : Form -> Prop) (x y : Form) :
   max_consistent G -> (~G x \/ G y <-> G (Impl x y)).
 Proof.
@@ -243,9 +256,5 @@ Proof.
     2: { left. assumption. }
     right. apply max_consistent_member.
     { assumption. }
-    eapply mp; apply -> max_consistent_member.
-    + apply H.
-    + assumption.
-    + assumption.
-    + assumption.
+    apply (mp _ x); apply -> max_consistent_member; assumption.
 Admitted.

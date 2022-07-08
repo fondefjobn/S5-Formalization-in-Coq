@@ -35,9 +35,12 @@ Fixpoint gen_tree_to_form (t : gen_tree nat) : option Form :=
 Global Program Instance form_countable : Countable Form :=
   inj_countable form_to_gen_tree gen_tree_to_form  _.
 Next Obligation.
-  intros f.
-  (* induction f; ... *)
-Admitted.
+  intros f. induction f.
+  - reflexivity.
+  - reflexivity.
+  - simpl. rewrite IHf1, IHf2. reflexivity.
+  - simpl. rewrite IHf. reflexivity.
+Qed.
 
 Definition decode : nat -> Form.
 Admitted.

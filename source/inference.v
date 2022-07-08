@@ -2,6 +2,13 @@
 From S5 Require Export tautologies.
 From S5 Require Export prop.
 
+Lemma ax_s5_bi_neg (G : Form -> Prop) (x y : Form) :
+  (ax_s5 G (Neg x) <-> ax_s5 G (Neg y)) -> (ax_s5 G x <-> ax_s5 G y).
+Proof.
+  intros [H1 H2]. split; intros H3.
+  - eapply mp. eapply mp. apply a_3. admit.
+Admitted.
+ 
 Lemma ax_s5_false (G : Form -> Prop) :
   ax_s5 G F_ <-> False.
 Proof.

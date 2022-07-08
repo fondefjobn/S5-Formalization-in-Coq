@@ -58,3 +58,11 @@ Proof.
   - apply double_negation_introduction, de_morgan_1, H.
   - apply double_negation_elimination in H. apply de_morgan_1, H.
 Qed.
+
+Lemma modus_tollens (P Q : Prop) :
+  (P -> Q) -> (~Q -> ~P).
+Proof.
+  intros H nQ. destruct (excluded_middle (P)) as [p | nP].
+  - apply H in p. contradiction.
+  - assumption.
+Qed.
