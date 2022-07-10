@@ -1,13 +1,13 @@
 
 From S5 Require Export form.
-From stdpp Require Import countable.
+From stdpp Require Export countable.
 
-Instance Form_eqdecision : EqDecision Form.
+Instance form_eqdecision : EqDecision form.
 Proof. 
   solve_decision.
 Qed.
 
-Fixpoint form_to_gen_tree (f : Form) : gen_tree nat :=
+Fixpoint form_to_gen_tree (f : form) : gen_tree nat :=
   match f with
   | F_ => GenLeaf 0
   | Var v => GenNode 0 [GenLeaf v]
@@ -15,7 +15,7 @@ Fixpoint form_to_gen_tree (f : Form) : gen_tree nat :=
   | Box f => GenNode 2 [form_to_gen_tree f]
   end.
 
-Fixpoint gen_tree_to_form (t : gen_tree nat) : option Form :=
+Fixpoint gen_tree_to_form (t : gen_tree nat) : option form :=
   match t with
   | GenLeaf 0 => Some F_
   | GenNode 0 [GenLeaf v] => Some (Var v)
@@ -32,7 +32,7 @@ Fixpoint gen_tree_to_form (t : gen_tree nat) : option Form :=
   | _ => None
   end.
 
-Global Program Instance form_countable : Countable Form :=
+Global Program Instance form_countable : Countable form :=
   inj_countable form_to_gen_tree gen_tree_to_form  _.
 Next Obligation.
   intros f. induction f.
@@ -41,13 +41,3 @@ Next Obligation.
   - simpl. rewrite IHf1, IHf2. reflexivity.
   - simpl. rewrite IHf. reflexivity.
 Qed.
-
-Definition decode : nat -> Form.
-Admitted.
-
-Definition encode : Form -> nat.
-Admitted.
-
-Lemma encode_decode (x : Form) :
-  decode (encode x) = x.
-Admitted.

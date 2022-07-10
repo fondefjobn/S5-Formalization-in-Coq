@@ -2,34 +2,28 @@
 From S5 Require Export proof.
 From S5 Require Export prop.
 
-Theorem ax_s5_soundness (G : Form -> Prop) (f : Form) :
+Theorem soundness (G : set) (f : form) :
   ax_s5 G f ->
-  forall m w, (forall y, G y -> interpret y m w) -> interpret f m w.
+  forall m w, (forall g, G g -> interpret g m w) -> interpret f m w.
 Proof.
-  intros H M. induction H; intros W1 HW.
-  - specialize (HW x H). assumption.
-  - intros X Y. assumption.
-  - intros XYZ XY X. simpl in XYZ, XY. apply XYZ.
+  intros H m. induction H; intros w Hw.
+  - apply Hw, H.
+  - intros H _. assumption.
+  - intros H1 H2 H3. simpl in H1, H2. apply (H1 H3 (H2 H3)).
+  - simpl. intros H1 H2. 
+    destruct (excluded_middle (interpret f m w)) as [H3 | H3].
     + assumption.
-    + apply XY, X.
-  - simpl. intros XFYF Y. destruct (excluded_middle (interpret x M W1)) as [H1|H1].
-    + assumption.
-    + apply XFYF in Y.
-      * contradiction.
-      * assumption.
-  - intros XY X W2 R. simpl in XY, X. specialize (XY W2). specialize (X W2). apply XY.
-    + assumption.
-    + apply X, R.
-  - intros X. simpl in X. specialize (X W1). apply X, reflex.
-  - intros X W2 R1 W3 R2. apply X. eapply trans.
-    + apply R1.
-    + apply R2.
-  - intros X W2 R NX. simpl. simpl in NX. specialize (NX W1). apply NX.
+    + exfalso. apply H1; assumption.
+  - intros H1 H2 v R. simpl in H1, H2. specialize (H1 v).
+    specialize (H2 v). apply (H1 R (H2 R)).
+  - intros H. simpl in H. specialize (H w). apply H, reflex.
+  - intros H v R1 u R2. apply H. eapply trans; eassumption.
+  - intros H1 v R H2. simpl. simpl in H2. specialize (H2 w). apply H2.
     + apply sym, R.
     + assumption.
   - simpl in IHax_s5_1. apply IHax_s5_1.
-    + apply HW.
-    + apply IHax_s5_2, HW.
-  - intros W2 R. specialize (IHax_s5 W2). apply IHax_s5.
-    intros y EG. unfold empty_set in EG. contradiction.
+    + apply Hw.
+    + apply IHax_s5_2, Hw.
+  - intros v R. specialize (IHax_s5 v). apply IHax_s5.
+    intros g E. unfold empty_set in E. contradiction.
 Qed.

@@ -7,7 +7,6 @@ source/form.v
 source/set.v
 source/proof.v
 source/soundness.v
-source/tautologies.v
 source/inference.v
 source/inference_modal.v
 source/deduce.v
@@ -15,4 +14,4 @@ source/consistent.v
 source/encode.v
 source/maximal.v
 source/canonical.v
-source/modelExample.v
+source/completenes.v

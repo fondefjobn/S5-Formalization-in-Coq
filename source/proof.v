@@ -1,22 +1,22 @@
 
 From S5 Require Export set.
 
-Fixpoint interpret (f : Form) (m : model) (w : m) : Prop :=
+Fixpoint interpret (f : form) (m : model) (w : m) : Prop :=
   match f with
   | F_ => False
   | Var x => val w x
   | Impl f1 f2 => interpret f1 m w -> interpret f2 m w
-  | Box f => forall (y : m), rel w y -> interpret f m y
+  | Box f => forall (v : m), rel w v -> interpret f m v
   end.
 
-Inductive ax_s5 : (Form -> Prop) -> Form -> Prop :=
-  | a_0 G (x : Form) : (G x : Prop) -> ax_s5 G x
-  | a_1 G (x y : Form) : ax_s5 G (Impl x (Impl y x))
-  | a_2 G (x y z : Form) : ax_s5 G (Impl (Impl x (Impl y z)) (Impl (Impl x y) (Impl x z)))
-  | a_3 G (x y : Form) : ax_s5 G (Impl (Impl (Neg x) (Neg y)) (Impl y x))
-  | a_k G (x y : Form) : ax_s5 G (Impl (Box (Impl x y)) (Impl (Box x) (Box y)))
-  | a_t G (x : Form) : ax_s5 G (Impl (Box x) x)
-  | a_4 G (x : Form) : ax_s5 G (Impl (Box x) (Box (Box x)))
-  | a_b G (x : Form) : ax_s5 G (Impl x (Box (Diamond x)))
-  | mp G (x y : Form) : ax_s5 G (Impl x y) -> ax_s5 G x -> ax_s5 G y
-  | nec (G : Form -> Prop) (x : Form) : ax_s5 empty_set x -> ax_s5 G (Box x).
+Inductive ax_s5 : set -> set :=
+  | a_0 (G : set) (f : form) : G f -> ax_s5 G f
+  | a_1 (G : set) (f g : form) : ax_s5 G (Impl f (Impl g f))
+  | a_2 (G : set) (f g h : form) : ax_s5 G (Impl (Impl f (Impl g h)) (Impl (Impl f g) (Impl f h)))
+  | a_3 (G : set) (f g : form) : ax_s5 G (Impl (Impl (Neg f) (Neg g)) (Impl g f))
+  | a_k (G : set) (f g : form) : ax_s5 G (Impl (Box (Impl f g)) (Impl (Box f) (Box g)))
+  | a_t (G : set) (f : form) : ax_s5 G (Impl (Box f) f)
+  | a_4 (G : set) (f : form) : ax_s5 G (Impl (Box f) (Box (Box f)))
+  | a_b (G : set) (f : form) : ax_s5 G (Impl f (Box (Diamond f)))
+  | mp (G : set) (f g : form) : ax_s5 G (Impl f g) -> ax_s5 G f -> ax_s5 G g
+  | nec (G : set) (f : form) : ax_s5 empty_set f -> ax_s5 G (Box f).
