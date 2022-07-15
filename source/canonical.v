@@ -124,39 +124,51 @@ Proof.
   - apply subset_rel_box_set.
 Qed.
 
+Lemma rel_box_set_deduce (w : can_model) f :
+  ax_s5 (rel_box_set w) f -> ax_s5 w (Box f).
+Proof.
+  intros H. remember (rel_box_set w) as G. revert HeqG.
+  induction H; intros H1; subst.
+  - unfold rel_box_set in H. apply a_0. assumption.
+  - apply nec. apply a_1.
+  - apply nec. apply a_2.
+  - apply nec. apply a_3.
+  - apply nec. apply a_k.
+  - apply nec. apply a_t.
+  - apply nec. apply a_4.
+  - apply nec. apply a_b.
+  - assert (IH1: ax_s5 w (Box f)).
+    { apply IHax_s5_2. reflexivity. }
+    assert (IH2: ax_s5 w (Box (Impl f g))).
+    { apply IHax_s5_1. reflexivity. }
+    eapply mp.
+    + eapply mp.
+      * apply a_k.
+      * apply IH2.
+    + apply IH1.
+  - apply nec. apply nec. assumption.
+Qed.
+
 Lemma existence_lemma (w1 : can_model) (f : form) :
   w1 (Diamond f) -> exists w2, can_rel w1 w2 /\ w2 f.
 Proof.
-  intros H. pose (G := rel_box_set w1).
-  assert (conG: consistent G).
-  { apply consistent_rel_box_set. }
-  assert (max_consistent w1) as [conW1 orW1].
-  { apply w1. }
+  intros H1. pose (G := rel_box_set w1).
   assert (conGf: consistent (add_singleton G f)).
-  { destruct (excluded_middle(consistent (add_singleton G f))) as [H3 | H3].
+  { destruct (excluded_middle(consistent (add_singleton G f))) as [conGf | nconGf].
     { assumption. }
-    apply double_negation_elimination in H3.
-    apply deduction_theorem in H3.
-    assert (H4: ax_s5 G (Neg f)).
-    { assumption. }
-    assert (H5: w1 (Neg f)).
-    { apply max_consistent_member.
-      - apply w1.
-      - apply (ax_s5_subset G).
-        + apply H4.
-        + apply subset_rel_box_set. }
-    assert (H6: w1 (Box (Neg f))).
-    { apply max_consistent_member.
-      - apply w1.
-      - apply nec. admit. }
-    exfalso. apply (consistent_member_neg w1 (Box (Neg f))); assumption.
+    exfalso. apply (consistent_member_neg w1 (Box (Neg f))).
+    { apply w1. }
+    2:{ assumption. }
+    apply max_consistent_member, rel_box_set_deduce.
+    { apply w1. }
+    apply deduction_theorem, double_negation_elimination, nconGf.
   }
   pose (w2 := world_from_set (add_singleton G f) conGf).
   exists w2. split.
-  - apply can_relation. intros x H10. simpl. exists 0. simpl.
+  - apply can_relation. intros x H2. simpl. exists 0. simpl.
     apply subset_add_singleton. assumption.
   - exists 0. simpl. apply member_add_singleton.
-Admitted.
+Qed.
 
 Lemma world_impl (G : can_world) (f g : form) :
   (G f -> G g) <-> G (Impl f g).
@@ -228,11 +240,4 @@ Proof.
     + apply w2.
     + assumption.
     + assumption.
-Qed.
-
-Lemma canonical_model_theorem (G : set) (conG : consistent G) :
-  forall f, G f -> interpret f can_model (world_from_set G conG).
-Proof.
-  intros f Gf. apply truth_lemma. simpl.
-  apply max_consistent_subset, Gf.
 Qed.

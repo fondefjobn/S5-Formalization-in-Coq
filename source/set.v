@@ -12,6 +12,12 @@ Definition subset (F G : set) : Prop :=
 Definition add_singleton (G : set) (f : form) : set :=
   fun x => x = f \/ G x.
 
+Lemma subset_lemma (F G : set) (f : form) :
+  subset F G -> F f -> G f.
+Proof.
+  intros H Ff. apply H, Ff.
+Qed.
+
 Lemma member_add_singleton (G : set) (f : form) :
   (add_singleton G f) f.
 Proof. 
