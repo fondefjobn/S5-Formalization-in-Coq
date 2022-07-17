@@ -1,7 +1,7 @@
 
 From S5 Require Export canonical.
 
-Theorem completeness2 (G : set) (f : form) :
+Theorem completeness (G : form_set) (f : form) :
   (forall (m: model) (w : m), (forall g, G g -> interpret g m w) ->
   interpret f m w) -> ax_s5 G f.
 Proof.

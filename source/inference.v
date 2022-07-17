@@ -1,7 +1,7 @@
 
 From S5 Require Export proof.
 
-Lemma ax_s5_self_impl (G : set) (f : form) :
+Lemma ax_s5_self_impl (G : form_set) (f : form) :
   ax_s5 G (Impl f f).
 Proof.
   eapply mp.
@@ -11,7 +11,7 @@ Proof.
   - apply a_1 with (g := f).
 Qed.
 
-Lemma ax_s5_hs (G : set) (f g h : form) :
+Lemma ax_s5_hs (G : form_set) (f g h : form) :
   ax_s5 G (Impl (Impl g h) (Impl (Impl f g) (Impl f h))).
 Proof.
   eapply mp.
@@ -23,7 +23,7 @@ Proof.
   - apply a_1.
 Qed.
 
-Lemma ax_s5_hs_infer (G : set) (f g h : form) :
+Lemma ax_s5_hs_infer (G : form_set) (f g h : form) :
   ax_s5 G (Impl g h) -> ax_s5 G (Impl f g) -> ax_s5 G (Impl f h).
 Proof.
   intros H1 H2. eapply mp.
@@ -33,7 +33,7 @@ Proof.
   - assumption.
 Qed.
 
-Lemma ax_s5_triple_impl (G : set) (f g : form) :
+Lemma ax_s5_triple_impl (G : form_set) (f g : form) :
   ax_s5 G (Impl f (Impl (Impl f g) g)).
 Proof.
   eapply mp.
@@ -45,7 +45,7 @@ Proof.
   - apply a_1.
 Qed.
 
-Lemma ax_s5_dne (G : set) (f : form) :
+Lemma ax_s5_dne (G : form_set) (f : form) :
   ax_s5 G (Impl (Neg (Neg f)) f).
 Proof.
   eapply ax_s5_hs_infer.
@@ -59,7 +59,7 @@ Proof.
     + apply a_1.
 Qed.
 
-Lemma ax_s5_dne_infer (G : set) (f : form) :
+Lemma ax_s5_dne_infer (G : form_set) (f : form) :
   ax_s5 G (Neg (Neg f)) -> ax_s5 G f.
 Proof.
   intros H. eapply mp.
@@ -67,7 +67,7 @@ Proof.
   - assumption.
 Qed.
 
-Lemma ax_s5_dni (G : set) (f : form) :
+Lemma ax_s5_dni (G : form_set) (f : form) :
   ax_s5 G (Impl f (Neg (Neg f))).
 Proof.
   eapply mp.
@@ -75,7 +75,7 @@ Proof.
   - apply ax_s5_dne.
 Qed.
 
-Lemma ax_s5_dni_infer (G : set) (f : form) :
+Lemma ax_s5_dni_infer (G : form_set) (f : form) :
   ax_s5 G f -> ax_s5 G (Neg (Neg f)).
 Proof.
   intros H. eapply mp.
@@ -83,7 +83,7 @@ Proof.
   - assumption.
 Qed.
 
-Lemma ax_s5_impl_2_neg_1 (G : set) (f g : form) :
+Lemma ax_s5_impl_2_neg_1 (G : form_set) (f g : form) :
   ax_s5 G (Impl f g) -> ax_s5 G (Impl (Neg (Neg f)) g).
 Proof.
   intros H. eapply mp.
@@ -95,7 +95,7 @@ Proof.
   - apply ax_s5_dne.
 Qed.
 
-Lemma ax_s5_impl_2_neg_2 (G : set) (f g : form) :
+Lemma ax_s5_impl_2_neg_2 (G : form_set) (f g : form) :
   ax_s5 G (Impl f g) -> ax_s5 G (Impl f (Neg (Neg g))).
 Proof.
   intros H. eapply mp.
@@ -107,7 +107,7 @@ Proof.
   - assumption.
 Qed.
 
-Lemma ax_s5_mt (G : set) (x y : form) :
+Lemma ax_s5_mt (G : form_set) (x y : form) :
   ax_s5 G (Impl x y) -> ax_s5 G (Impl (Neg y) (Neg x)).
 Proof.
   intros H. eapply mp.

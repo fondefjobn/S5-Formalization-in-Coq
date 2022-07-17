@@ -2,7 +2,7 @@
 From S5 Require Export proof.
 From S5 Require Export prop.
 
-Theorem soundness (G : set) (f : form) :
+Theorem soundness (G : form_set) (f : form) :
   ax_s5 G f ->
   forall m w, (forall g, G g -> interpret g m w) -> interpret f m w.
 Proof.

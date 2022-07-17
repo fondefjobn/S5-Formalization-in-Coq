@@ -13,7 +13,7 @@ Definition can_rel (F G : can_world) : Prop :=
 Definition can_val (G : can_world) (x : var) : Prop :=
   G (Var x).
 
-Definition world_from_set (G : set) (conG : consistent G) : can_world :=
+Definition world_from_set (G : form_set) (conG : consistent G) : can_world :=
   let G' := max_consistent_set G in
   {| world_set := G';
     world_set_mcs := max_consistent_set_correct G conG |}.
@@ -24,18 +24,6 @@ Proof.
   intros H Ff. apply max_consistent_member.
   { apply G. }
   apply H, a_0, Ff.
-Qed.
-
-Lemma world_4_diamond (G : can_world) (f : form) :
-  G (Diamond (Diamond f)) -> G (Diamond f).
-Proof.
-  apply world_closed_derv, ax_s5_4_diamond.
-Qed.
-
-Lemma world_dne (G : can_world) (f : form) :
-  G (Neg (Neg f)) -> G f.
-Proof.
-  apply world_closed_derv, ax_s5_dne_infer.
 Qed.
 
 Lemma can_relation (F G : can_world):
@@ -57,8 +45,9 @@ Proof.
     { apply F. }
     intros H f Gf. specialize (orF (Diamond f)). destruct orF as [Fdf | Fndf].
     { assumption. }
-    unfold Diamond in Fndf. apply world_dne in Fndf. specialize (H _ Fndf).
-    exfalso. eapply (consistent_member_neg G).
+    unfold Diamond in Fndf. eapply world_closed_derv in Fndf. 
+    2:{ apply ax_s5_dne_infer. }
+    specialize (H _ Fndf). exfalso. eapply (consistent_member_neg G).
     + apply G.
     + apply Gf.
     + assumption.
@@ -76,7 +65,9 @@ Lemma can_rel_trans :
   transitive _ can_rel.
 Proof.
   intros E F G R1 R2 f H. unfold can_rel in R1, R2.
-  apply world_4_diamond, R1, R2, H.
+  eapply world_closed_derv.
+  - apply ax_s5_4_diamond.
+  - apply R1, R2, H.
 Qed.
 
 Lemma can_rel_sym :
@@ -105,31 +96,31 @@ Definition can_model : model :=
      eq := can_rel_equiv;
   |}.
 
-Definition rel_box_set (w : can_model) : set :=
+Definition can_rel_box_set (w : can_model) : form_set :=
   fun f => w (Box f).
 
-Lemma subset_rel_box_set (w : can_model) :
-  subset (rel_box_set w) w.
+Lemma subset_can_rel_box_set (w : can_model) :
+  subset (can_rel_box_set w) w.
 Proof.
-  intros f H. unfold rel_box_set in H. apply (world_closed_derv _ (Box f)).
+  intros f H. unfold can_rel_box_set in H. apply (world_closed_derv _ (Box f)).
   - apply mp, a_t.
   - assumption.
 Qed.
 
-Lemma consistent_rel_box_set (w : can_model) :
-  consistent (rel_box_set w).
+Lemma consistent_can_rel_box_set (w : can_model) :
+  consistent (can_rel_box_set w).
 Proof.
   apply (consistent_subset _ w).
   - apply w.
-  - apply subset_rel_box_set.
+  - apply subset_can_rel_box_set.
 Qed.
 
-Lemma rel_box_set_deduce (w : can_model) f :
-  ax_s5 (rel_box_set w) f -> ax_s5 w (Box f).
+Lemma ax_s5_can_rel_box_set (w : can_model) f :
+  ax_s5 (can_rel_box_set w) f -> ax_s5 w (Box f).
 Proof.
-  intros H. remember (rel_box_set w) as G. revert HeqG.
+  intros H. remember (can_rel_box_set w) as G. revert HeqG.
   induction H; intros H1; subst.
-  - unfold rel_box_set in H. apply a_0. assumption.
+  - unfold can_rel_box_set in H. apply a_0. assumption.
   - apply nec. apply a_1.
   - apply nec. apply a_2.
   - apply nec. apply a_3.
@@ -152,14 +143,14 @@ Qed.
 Lemma existence_lemma (w1 : can_model) (f : form) :
   w1 (Diamond f) -> exists w2, can_rel w1 w2 /\ w2 f.
 Proof.
-  intros H1. pose (G := rel_box_set w1).
+  intros H1. pose (G := can_rel_box_set w1).
   assert (conGf: consistent (add_singleton G f)).
   { destruct (excluded_middle(consistent (add_singleton G f))) as [conGf | nconGf].
     { assumption. }
     exfalso. apply (consistent_member_neg w1 (Box (Neg f))).
     { apply w1. }
     2:{ assumption. }
-    apply max_consistent_member, rel_box_set_deduce.
+    apply max_consistent_member, ax_s5_can_rel_box_set.
     { apply w1. }
     apply deduction_theorem, double_negation_elimination, nconGf.
   }

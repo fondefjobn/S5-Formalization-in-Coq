@@ -1,7 +1,7 @@
 
 From S5 Require Export inference.
 
-Lemma ax_s5_t_diamond (G : set) (f : form) :
+Lemma ax_s5_t_diamond (G : form_set) (f : form) :
   ax_s5 G f -> ax_s5 G (Diamond f).
 Proof.
   intros H. eapply mp.
@@ -11,7 +11,7 @@ Proof.
     + assumption.
 Qed.
 
-Lemma ax_s5_box_dni (G : set) (f : form) :
+Lemma ax_s5_box_dni (G : form_set) (f : form) :
   ax_s5 G (Impl (Box f) (Box (Neg (Neg f)))).
 Proof.
   eapply mp.
@@ -19,7 +19,7 @@ Proof.
   - apply nec, ax_s5_dni.
 Qed.
 
-Lemma ax_s5_box_dni_infer (G : set) (f : form) :
+Lemma ax_s5_box_dni_infer (G : form_set) (f : form) :
   ax_s5 G (Box f) -> ax_s5 G (Box (Neg (Neg f))).
 Proof.
   intros H. apply (mp _ (Box f)).
@@ -27,7 +27,7 @@ Proof.
   - assumption.
 Qed.
 
-Lemma ax_s5_box_dne (G : set) (f : form) :
+Lemma ax_s5_box_dne (G : form_set) (f : form) :
   ax_s5 G (Impl (Box (Neg (Neg f))) (Box f)).
 Proof.
   eapply mp.
@@ -35,7 +35,7 @@ Proof.
   - apply nec. apply ax_s5_dne.
 Qed.
 
-Lemma ax_s5_box_dne_infer (G : set) (f : form) :
+Lemma ax_s5_box_dne_infer (G : form_set) (f : form) :
   ax_s5 G (Box (Neg (Neg f))) -> ax_s5 G (Box f).
 Proof.
   intros H. apply (mp _ (Box (Neg (Neg f)))).
@@ -51,7 +51,7 @@ Proof.
   - apply ax_s5_dne_infer in H. apply ax_s5_box_dne_infer, H.
 Qed.
 
-Lemma ax_s5_impl_box_dne (f g : form) (G : set) :
+Lemma ax_s5_impl_box_dne (f g : form) (G : form_set) :
   ax_s5 G (Impl f (Box g)) -> ax_s5 G (Impl f (Box (Neg (Neg g)))).
 Proof.
   intros H. eapply mp.
@@ -63,7 +63,7 @@ Proof.
   - assumption.
 Qed.
 
-Lemma ax_s5_4_diamond (G : set) (f : form) :
+Lemma ax_s5_4_diamond (G : form_set) (f : form) :
   ax_s5 G (Diamond (Diamond f)) -> ax_s5 G (Diamond f).
 Proof.
   apply mp, ax_s5_mt, ax_s5_impl_box_dne, a_4.

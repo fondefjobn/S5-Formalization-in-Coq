@@ -2,24 +2,24 @@
 From S5 Require Export deduce.
 From S5 Require Export prop.
 
-Definition consistent (G : set) : Prop :=
+Definition consistent (G : form_set) : Prop :=
   ~(ax_s5 G F_).
 
-Lemma consistent_xor (G : set) (f : form) :
+Lemma consistent_xor (G : form_set) (f : form) :
   consistent G -> ~(ax_s5 G f /\ ax_s5 G (Neg f)).
 Proof.
   intros conG [Gf Gnf]. apply conG.
   apply (mp _ f); assumption.
 Qed.
 
-Lemma consistent_subset (F G : set) :
+Lemma consistent_subset (F G : form_set) :
   consistent G -> subset F G -> consistent F.
 Proof.
   intros conG H nconF. apply conG.
   apply (ax_s5_subset F G); assumption.
 Qed.
 
-Lemma inconsistent_consistent (G : set) (f : form) : 
+Lemma inconsistent_consistent (G : form_set) (f : form) : 
   consistent G -> 
   ~ consistent (add_singleton G f) -> consistent (add_singleton G (Neg f)).
 Proof.
@@ -34,7 +34,7 @@ Proof.
     + assumption.
 Qed.
 
-Lemma consistent_member_neg (G : set) (f : form) :
+Lemma consistent_member_neg (G : form_set) (f : form) :
   consistent G -> G f -> ~G (Neg f).
 Proof.
   intros conG Gf Gnf. apply (consistent_xor G f conG).

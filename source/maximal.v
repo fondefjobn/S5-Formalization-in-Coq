@@ -3,7 +3,7 @@ From S5 Require Export consistent.
 From S5 Require Export encode.
 From S5 Require Export nat.
 
-Definition insert (G : set) (n : nat) : (set) := 
+Definition insert (G : form_set) (n : nat) : (form_set) := 
   fun x =>
     match decode (Pos.of_nat n) with
     | Some f =>
@@ -12,7 +12,7 @@ Definition insert (G : set) (n : nat) : (set) :=
     | None => G x
     end.
 
-Lemma insert_consistent (G : set) (n : nat) : 
+Lemma insert_consistent (G : form_set) (n : nat) : 
   consistent G -> consistent (insert G n).
 Proof.
   intros conG. unfold insert.
@@ -32,7 +32,7 @@ Proof.
     + destruct H as [_ H]. left. assumption.
 Qed.
 
-Lemma insert_subset (G : set) (n : nat) : 
+Lemma insert_subset (G : form_set) (n : nat) : 
   subset G (insert G n).
 Proof.
   intros g H. unfold insert.
@@ -41,13 +41,13 @@ Proof.
   - assumption.
 Qed.
 
-Fixpoint step (G : set) (n : nat) : (set) :=
+Fixpoint step (G : form_set) (n : nat) : (form_set) :=
   match n with
   | 0 => G
   | S n => insert (step G n) n
   end.
 
-Lemma step_consistent (G : set) :
+Lemma step_consistent (G : form_set) :
   consistent G -> forall n, consistent (step G n).
 Proof.
   induction n.
@@ -55,7 +55,7 @@ Proof.
   - simpl. apply insert_consistent, IHn.
 Qed.
 
-Lemma step_subset (G : set) (i j : nat) :
+Lemma step_subset (G : form_set) (i j : nat) :
   i <= j -> subset (step G i) (step G j).
 Proof.
   intros H1 f H2. induction H1.
@@ -63,7 +63,7 @@ Proof.
   - simpl. apply insert_subset, IHle.
 Qed.
 
-Lemma step_maximal (G : set) (f : form) :
+Lemma step_maximal (G : form_set) (f : form) :
   consistent G -> step G (S (Pos.to_nat (encode f))) f \/ 
                   step G (S (Pos.to_nat (encode f))) (Neg f).
 Proof.
@@ -82,13 +82,13 @@ Proof.
     + reflexivity.
 Qed.
 
-Definition big_union (X : nat -> (set)) (f : form) : Prop :=
+Definition big_union (X : nat -> (form_set)) (f : form) : Prop :=
   exists i, (X i) f.
 
-Definition max_consistent_set (G : set) : set :=
+Definition max_consistent_set (G : form_set) : form_set :=
   big_union (step G).
 
-Lemma lindenbaum_lemma (G : set) (f : form) :
+Lemma lindenbaum_lemma (G : form_set) (f : form) :
   ax_s5 (big_union (step G)) f -> exists i, ax_s5 (step G i) f.
 Proof.
   intros H. remember (big_union (step G)) as G'.
@@ -121,14 +121,14 @@ Proof.
   - exists 0. apply nec, H.
 Qed.
 
-Lemma max_consistent_set_consistent (G : set) :
+Lemma max_consistent_set_consistent (G : form_set) :
   consistent G -> consistent (max_consistent_set G).
 Proof.
   intros conG H. apply lindenbaum_lemma in H.
   destruct H. eapply (step_consistent G); eassumption.
 Qed.
 
-Lemma max_consistent_set_maximal (G : set) (f : form) :
+Lemma max_consistent_set_maximal (G : form_set) (f : form) :
   consistent G -> max_consistent_set G f \/ max_consistent_set G (Neg f).
 Proof.
   intros conG. pose (n := (Pos.to_nat (encode f))).
@@ -137,10 +137,10 @@ Proof.
   - right. exists (S n). assumption.
 Qed.
 
-Definition max_consistent (G : set) : Prop :=
+Definition max_consistent (G : form_set) : Prop :=
   consistent G /\ forall f, (G f \/ G (Neg f)).
 
-Lemma max_consistent_set_correct (G : set) :
+Lemma max_consistent_set_correct (G : form_set) :
   consistent G -> max_consistent (max_consistent_set G).
 Proof.
   intros conG. split.
@@ -148,7 +148,7 @@ Proof.
   - intros f. apply max_consistent_set_maximal, conG.
 Qed.
 
-Lemma max_consistent_subset (G : set) :
+Lemma max_consistent_subset (G : form_set) :
   subset G (max_consistent_set G).
 Proof.
   intros f H. pose (n := (Pos.to_nat (encode f))).
@@ -157,7 +157,7 @@ Proof.
   - simpl. apply insert_subset, IHn.
 Qed.
 
-Lemma max_consistent_member (G : set) (f : form) :
+Lemma max_consistent_member (G : form_set) (f : form) :
   max_consistent G -> (G f <-> ax_s5 G f).
 Proof.
   intros mcsG. split; intros H.

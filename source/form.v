@@ -1,5 +1,6 @@
 
 From S5 Require Export model.
+From S5 Require Export set.
 
 Inductive form : Type :=
   | F_
@@ -18,3 +19,5 @@ Definition Conj (f1 f2 : form) := Neg (Disj (Neg f1) (Neg f2)).
 Definition BiImpl (f1 f2 : form) := Conj (Impl f1 f2) (Impl f2 f1).
 
 Definition Diamond (f : form) := Neg (Box (Neg f)).
+
+Definition form_set := set form.
