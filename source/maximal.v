@@ -3,7 +3,23 @@ From S5 Require Export consistent.
 From S5 Require Export encode.
 From S5 Require Export nat.
 
-Definition insert (G : form_set) (n : nat) : (form_set) := 
+Definition max_consistent (G : form_set) : Prop :=
+  consistent G /\ forall f, (G f \/ G (Neg f)).
+
+Lemma max_consistent_member (G : form_set) (f : form) :
+  max_consistent G -> (G f <-> ax_s5 G f).
+Proof.
+  intros mcsG. split; intros H.
+  { apply a_0, H. }
+  destruct mcsG as [conG orG]. destruct (orG f) as [Gf | Gnf].
+  { assumption. }
+  exfalso. apply (consistent_xor G f conG).
+  split.
+  - assumption.
+  - apply a_0. assumption.
+Qed.
+
+Definition insert (G : form_set) (n : nat) : form_set := 
   fun x =>
     match decode (Pos.of_nat n) with
     | Some f =>
@@ -20,16 +36,16 @@ Proof.
   2:{ assumption. }
   destruct (excluded_middle (consistent (add_singleton G f))) as [conGf | nConGf].
   - apply (consistent_subset _ (add_singleton G f) conGf).
-    intros x [Gx | [H | H]].
+    intros x [Gx | [[_ H] | [H _]]].
     + right. assumption.
-    + left. apply H.
-    + destruct H. contradiction.
+    + left. assumption.
+    + contradiction.
   - apply (consistent_subset _ (add_singleton G (Neg f))).
     { apply inconsistent_consistent; assumption. }
-    intros x [Gx | [H | H]].
+    intros x [Gx | [[H _] | [_ H]]].
     + right. assumption. 
-    + destruct H as [H _]. contradiction.
-    + destruct H as [_ H]. left. assumption.
+    + contradiction.
+    + left. assumption.
 Qed.
 
 Lemma insert_subset (G : form_set) (n : nat) : 
@@ -41,7 +57,7 @@ Proof.
   - assumption.
 Qed.
 
-Fixpoint step (G : form_set) (n : nat) : (form_set) :=
+Fixpoint step (G : form_set) (n : nat) : form_set :=
   match n with
   | 0 => G
   | S n => insert (step G n) n
@@ -82,19 +98,16 @@ Proof.
     + reflexivity.
 Qed.
 
-Definition big_union (X : nat -> (form_set)) (f : form) : Prop :=
-  exists i, (X i) f.
-
 Definition max_consistent_set (G : form_set) : form_set :=
-  big_union (step G).
+  fun f => exists i, (step G i) f.
 
 Lemma lindenbaum_lemma (G : form_set) (f : form) :
-  ax_s5 (big_union (step G)) f -> exists i, ax_s5 (step G i) f.
+  ax_s5 (max_consistent_set G) f -> exists i, ax_s5 (step G i) f.
 Proof.
-  intros H. remember (big_union (step G)) as G'.
+  intros H. remember (max_consistent_set G) as G'.
   induction H; subst.
-  - unfold big_union in H. destruct H as [j Hj].
-    exists j. apply a_0. assumption.
+  - unfold max_consistent_set in H. destruct H as [j Hj].
+    exists j. apply a_0, Hj.
   - exists 0. apply a_1.
   - exists 0. apply a_2.
   - exists 0. apply a_3.
@@ -125,7 +138,7 @@ Lemma max_consistent_set_consistent (G : form_set) :
   consistent G -> consistent (max_consistent_set G).
 Proof.
   intros conG H. apply lindenbaum_lemma in H.
-  destruct H. eapply (step_consistent G); eassumption.
+  destruct H. eapply (step_consistent G conG). apply H.
 Qed.
 
 Lemma max_consistent_set_maximal (G : form_set) (f : form) :
@@ -136,9 +149,6 @@ Proof.
   - left. exists (S n). assumption.
   - right. exists (S n). assumption.
 Qed.
-
-Definition max_consistent (G : form_set) : Prop :=
-  consistent G /\ forall f, (G f \/ G (Neg f)).
 
 Lemma max_consistent_set_correct (G : form_set) :
   consistent G -> max_consistent (max_consistent_set G).
@@ -151,22 +161,5 @@ Qed.
 Lemma max_consistent_subset (G : form_set) :
   subset G (max_consistent_set G).
 Proof.
-  intros f H. pose (n := (Pos.to_nat (encode f))).
-  exists n. induction n.
-  - unfold step. assumption.
-  - simpl. apply insert_subset, IHn.
-Qed.
-
-Lemma max_consistent_member (G : form_set) (f : form) :
-  max_consistent G -> (G f <-> ax_s5 G f).
-Proof.
-  intros mcsG. split; intros H.
-  { apply a_0, H. }
-  destruct mcsG as [conG orG].
-  specialize (orG f). destruct orG as [Gf | Gnf].
-  { assumption. }
-  exfalso. apply (consistent_xor G f conG).
-  split.
-  - assumption.
-  - apply a_0. assumption.
+  intros f H. unfold max_consistent_set. exists 0. simpl. assumption.
 Qed.

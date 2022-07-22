@@ -1,7 +1,6 @@
 
 From Coq Require Export Relations.
-
-Definition var := nat.
+From S5 Require Export form.
 
 Record model : Type := Model {
   world :> Type;
@@ -30,3 +29,11 @@ Lemma sym (m : model) :
 Proof.
   apply m.
 Qed.
+
+Fixpoint interpret (f : form) (m : model) (w : m) : Prop :=
+  match f with
+  | F_ => False
+  | Var x => val w x
+  | Impl f1 f2 => interpret f1 m w -> interpret f2 m w
+  | Box f => forall (v : m), rel w v -> interpret f m v
+  end.

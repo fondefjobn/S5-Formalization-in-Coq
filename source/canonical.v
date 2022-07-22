@@ -8,7 +8,7 @@ Record can_world := {
 }.
 
 Definition can_rel (F G : can_world) : Prop :=
-  forall x, G x -> F (Diamond x).
+  forall f, G f -> F (Diamond f).
 
 Definition can_val (G : can_world) (x : var) : Prop :=
   G (Var x).
@@ -32,14 +32,13 @@ Proof.
   split.
   - assert (orG : forall x, G x \/ G (Neg x)).
     { apply G. }
-    intros R f Fbf. specialize (orG f). destruct orG as [Gf | Gnf].
-    { assumption. }
-    specialize (R _ Gnf). unfold Diamond in R.
-    exfalso. eapply (consistent_member_neg F).
-    { apply F. }
-    2:{ apply R. }
-    eapply world_closed_derv.
-    + apply ax_s5_box_dni_infer.
+    intros R f Fbf. destruct (orG f) as [Gf | Gnf].
+    { assumption. } unfold can_rel in R.
+    specialize (R _ Gnf). eapply world_closed_derv in Fbf.
+    2:{ apply ax_s5_df_box. }
+    exfalso. eapply (consistent_member F).
+    + apply F.
+    + apply R.
     + assumption.
   - assert (orF : forall x, F x \/ F (Neg x)).
     { apply F. }
@@ -47,7 +46,7 @@ Proof.
     { assumption. }
     unfold Diamond in Fndf. eapply world_closed_derv in Fndf. 
     2:{ apply ax_s5_dne_infer. }
-    specialize (H _ Fndf). exfalso. eapply (consistent_member_neg G).
+    specialize (H _ Fndf). exfalso. eapply (consistent_member G).
     + apply G.
     + apply Gf.
     + assumption.
@@ -56,9 +55,9 @@ Qed.
 Lemma can_rel_reflex :
   reflexive _ can_rel.
 Proof.
-  intros G f H. apply max_consistent_member.
-  - apply G.
-  - apply ax_s5_t_diamond, a_0, H.
+  intros G f H. apply (can_relation G G).
+  - intros g. apply world_closed_derv. apply mp. apply a_t.
+  - assumption.
 Qed.
 
 Lemma can_rel_trans :
@@ -147,7 +146,7 @@ Proof.
   assert (conGf: consistent (add_singleton G f)).
   { destruct (excluded_middle(consistent (add_singleton G f))) as [conGf | nconGf].
     { assumption. }
-    exfalso. apply (consistent_member_neg w1 (Box (Neg f))).
+    exfalso. apply (consistent_member w1 (Box (Neg f))).
     { apply w1. }
     2:{ assumption. }
     apply max_consistent_member, ax_s5_can_rel_box_set.
@@ -175,7 +174,7 @@ Proof.
       * assumption.
     + destruct (orG f) as [Gf | Gnf].
       * exfalso. apply Gfg in Gf. 
-        apply (consistent_member_neg G g conG); assumption.
+        apply (consistent_member G g conG); assumption.
       * eapply world_closed_derv.
         { apply mp, a_3. }
         apply (world_closed_derv _ (Neg f)).
@@ -183,8 +182,7 @@ Proof.
         intros H. apply (mp _ (Neg f)).
         -- apply a_1.
         -- assumption.
-  - intros Gfg Gf. assert (max_consistent G) as [conG orG].
-    { apply G. }
+  - intros Gfg Gf.
     apply (world_closed_derv _ (Impl f g)).
     2:{ assumption. }
     intros H. apply (mp _ _ _ H).
@@ -196,7 +194,7 @@ Qed.
 Lemma truth_lemma :
   forall (f : form) (w1 : can_model) , w1 f <-> interpret f can_model w1.
 Proof.
-  intros f. induction f; simpl; split; intros H1.
+  induction f; simpl; split; intros H1.
   - apply w1, a_0, H1.
   - contradiction.
   - assumption.
@@ -205,29 +203,18 @@ Proof.
     { assumption. }
     apply IHf1, H2.
   - apply world_impl. intros H2. apply IHf2, H1, IHf1, H2.
-  - intros w2 R. apply IHf. unfold can_rel in R. 
-    assert (max_consistent w2) as [_ orW2].
-    { apply w2. }
-    specialize (orW2 f) as [w2f | w2nf].
-    { assumption. }
-    apply (R (Neg f)) in w2nf as H2.
-    exfalso. apply (consistent_member_neg w1 (Diamond (Neg f))).
-    { apply w1. }
-    { assumption. }
-    eapply world_closed_derv in H1.
-    + apply H1.
-    + apply ax_s5_df_box.
+  - intros w2 R. apply IHf. apply (can_relation w1); assumption.
   - assert (max_consistent w1) as [_ orW1].
     { apply w1. }
-    specialize (orW1 (Box f)) as H. destruct H as [w1bf | w1nbf ].
+    specialize (orW1 (Box f)) as [w1bf | w1nbf ].
     { assumption. }
     apply (world_closed_derv w1 _ (Neg (Box (Neg (Neg f))))) in w1nbf.
     2:{ apply mp. eapply mp.
         { apply a_3. }
          apply ax_s5_impl_2_neg_1, ax_s5_impl_2_neg_2, ax_s5_box_dne. }
-    eapply existence_lemma in w1nbf. destruct w1nbf as [w2 [R w2f]].
+    eapply existence_lemma in w1nbf as [w2 [R w2f]].
     specialize (H1 w2 R). apply IHf in H1. exfalso. 
-    apply (consistent_member_neg w2 f).
+    apply (consistent_member w2 f).
     + apply w2.
     + assumption.
     + assumption.

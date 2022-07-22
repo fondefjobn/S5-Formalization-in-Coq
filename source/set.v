@@ -6,7 +6,7 @@ Section set.
   Definition set T := T -> Prop.
 
   Definition empty_set : set T := 
-    fun (f : T) => False.
+    fun (x : T) => False.
 
   Definition subset (F G : set T) : Prop :=
     forall x, F x -> G x.

@@ -1,6 +1,7 @@
 
-From S5 Require Export model.
 From S5 Require Export set.
+
+Definition var := nat.
 
 Inductive form : Type :=
   | F_

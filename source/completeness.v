@@ -1,4 +1,5 @@
 
+
 From S5 Require Export canonical.
 
 Theorem completeness (G : form_set) (f : form) :

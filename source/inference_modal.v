@@ -1,16 +1,6 @@
 
 From S5 Require Export inference.
 
-Lemma ax_s5_t_diamond (G : form_set) (f : form) :
-  ax_s5 G f -> ax_s5 G (Diamond f).
-Proof.
-  intros H. eapply mp.
-  - apply a_t.
-  - eapply mp.
-    + apply a_b.
-    + assumption.
-Qed.
-
 Lemma ax_s5_box_dni (G : form_set) (f : form) :
   ax_s5 G (Impl (Box f) (Box (Neg (Neg f)))).
 Proof.
@@ -61,6 +51,16 @@ Proof.
       * apply a_1.
       * apply ax_s5_box_dni.
   - assumption.
+Qed.
+
+Lemma ax_s5_t_diamond (G : form_set) (f : form) :
+  ax_s5 G f -> ax_s5 G (Diamond f).
+Proof.
+  intros H. eapply mp.
+  - apply a_t.
+  - eapply mp.
+    + apply a_b.
+    + assumption.
 Qed.
 
 Lemma ax_s5_4_diamond (G : form_set) (f : form) :
