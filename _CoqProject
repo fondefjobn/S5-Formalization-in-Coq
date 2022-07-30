@@ -3,8 +3,8 @@
 source/prop.v
 source/nat.v
 source/set.v
-source/model.v
 source/form.v
+source/model.v
 source/proof.v
 source/soundness.v
 source/inference.v
